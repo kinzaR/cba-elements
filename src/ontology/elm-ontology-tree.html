@@ -1,0 +1,63 @@
+
+<link rel="import" href="elm-ontology-tree-item.html">
+<dom-module id="elm-ontology-tree">
+    <style is="custom-style" include="iron-flex iron-flex-reverse iron-flex-alignment iron-flex-factors iron-positioning">
+        :host {
+            position: relative;
+            display: block;
+            box-sizing: border-box;
+            background-color: inherit;
+        }
+    </style>
+    <template>
+        <template is="dom-repeat" items="{{tree}}" as="file">
+            <elm-ontology-tree-item file="{{file}}" tree="{{tree}}">
+            </elm-ontology-tree-item>
+        </template>
+    </template>
+    <script>
+        Polymer({
+            is: "elm-ontology-tree",
+            properties: {
+                tree: {
+                    type: Array,
+                    observer: 'treeChanged'
+                }
+            },
+            treeChanged: function(neo, old) {
+                var openIndex = {};
+                if (old) {
+                    for (var i = 0; i < old.length; i++) {
+                        this._createOpenIndex(openIndex, old[i]);
+                    }
+                }
+                if (neo) {
+                    for (var i = 0; i < neo.length; i++) {
+                        this._initFile(neo[i], null, openIndex);
+                    }
+                }
+            },
+            _initFile: function(file, parent, openIndex) {
+                if (parent == null) {
+                    file.path = file.name;
+                } else {
+                    file.path = parent.path + '/' + file.name;
+                    file.parent = parent;
+                }
+                var defaultOpen = (file.open == true) ? file.open : false;
+                file.open = openIndex[file.path] || defaultOpen;
+                for (var i = 0; i < file.children.length; i++) {
+                    this._initFile(file.children[i], file, openIndex);
+                }
+            },
+            _createOpenIndex: function(openIndex, file) {
+                if (openIndex[file.path] == null) {
+                    openIndex[file.path] = file.open;
+                    for (var i = 0; i < file.children.length; i++) {
+                        this._createOpenIndex(openIndex, file.children[i]);
+                    }
+                }
+            }
+        });
+    </script>
+</dom-module>

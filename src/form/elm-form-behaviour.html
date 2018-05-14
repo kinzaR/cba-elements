@@ -1,0 +1,202 @@
+<link rel="import" href="../../../polymer/polymer.html">
+<link rel="import" href="../elm-dialog/elm-dialog.html">
+<link rel="import" href="../elm-form-box.html">
+
+<script>
+    elmFormBehaviour = {
+        properties: {
+            jobName: {
+                type: String,
+                value: 'JobName'
+            },
+            toolName: {
+                type: String
+            },
+            description: {
+                type: String,
+                value: 'Job info...'
+            },
+            message: {
+                type: String,
+                value: ""
+            },
+            hasErrors: {
+                type: Boolean,
+                value: false
+            },
+            userData: {
+                type: Object
+            },
+            bioformats: {
+                type: Array
+            }
+        },
+        isEqual: function(value, currentValue) {
+            return value == currentValue;
+        },
+        isNull: function(o) {
+            return o == null;
+        },
+        checkSelectedFile: function(fileSelector) {
+            return fileSelector.selectedFile !== undefined;
+        },
+        isExampleFile: function(fileSelector) {
+            return fileSelector.selectedFile._example === true;
+        },
+        handleDownloadFile: function(e) {
+            CbaManager.downloadExampleFile(this.toolName, e.currentTarget.dataset.example);
+        },
+        handleForm: function() {
+            this.message = '';
+            this.launchJob();
+        },
+        basicValidationForm: function() {
+            var validated = true;
+            var msg = "";
+            if (this.$.outdir.selectedFile === undefined) {
+                // msg += "Please select an output folder.\n";
+                // validated = false;
+            }
+            if (this.$.inputFile.selectedFile === undefined || this.$.inputFile.selectedFile.type != "FILE") {
+                this.setError(this.$.inputFile, "Please select an input file.")
+                validated = false;
+            }
+            if (this.$.jobName.value == "") {
+                this.setError(this.$.jobName, "Please add a job name.")
+                validated = false;
+            }
+            return validated;
+        },
+        launchJob: function() {},
+        createQuery: function() {
+            var query = {};
+            query.name = this.jobName;
+            query.description = this.description;
+            return query;
+        },
+        createArgs: function(executable) {
+            var args = {};
+            args.tool = this.toolName;
+            args.execution = this.toolName;
+            args.executable = executable;
+            args.options = {};
+
+            args.options["outdir"] = {
+                out: true
+            };
+            return args;
+        },
+        createJob: function(args, query) {
+            var me = this;
+
+            // Manage diskQuota
+            if ((this.userData.diskQuota - this.userData.diskUsage) > 0) {
+
+              CbaManager.jobs.create({
+                  query: query,
+                  request: {
+                      method: 'POST',
+                      headers: {
+                          "Content-Type": "application/json"
+                      },
+                      body: JSON.stringify(args),
+                      success: function(response) {
+                          if (response.response[0].error == null) {
+                              var userId = response.response[0].results[0].user._id;
+                              me.message = userId + ' created';
+                              me.selectedOption = "jobLaunched";
+                              me.fire('need-refresh');
+                              me.fire('job-launched');
+                              console.log("JOB LAUNCHED")
+                          } else {
+                              me.message = response.response[0].error;
+                          }
+                      },
+                      error: function() {
+                          me.message = 'Server error, try again later.';
+                      }
+                  }
+              });
+
+            }
+        },
+        getMode: function(scope) {
+            var mode = "id";
+            if (this.checkSelectedFile(scope)) {
+                mode = this.isExampleFile(scope) ? "example" : "id";
+            }
+            return mode;
+        },
+        addFlagArg: function(args, tag) {
+            args.options[tag] = {
+                type: 'flag'
+            }
+        },
+        addTextArg: function(args, tag, value) {
+            args.options[tag] = {
+                type: 'text',
+                value: value
+            }
+        },
+        addFileArg: function(args, tag, mode, value) {
+            args.options[tag] = {
+                type: 'file',
+                mode: mode,
+                value: value
+            }
+        },
+        getContentFile: function(file, callback) {
+            var me = this;
+            CbaManager.getFileContent(file._id, function(content) {
+                callback(content);
+            });
+        },
+        getFileByName: function(fileName, folder, callback) {
+            var me = this;
+            var path = folder.path + "/" + fileName;
+            CbaManager.getFileByPath(path, callback);
+
+        },
+        loadJob: function(job) {
+
+        },
+        redirection: function(args, job) {
+
+        },
+        alert: function(msg, cb) {
+            new elmDialog().alert(msg, cb);
+        },
+        confirm: function(msg, cb) {
+            new elmDialog().confirm(msg, cb);
+        },
+        prompt: function(msg, cb) {
+            new elmDialog().prompt(msg, cb);
+        },
+        checkRadioByValue: function(name, value) {
+            var r = this.querySelector("input[name='" + name + "'][value='" + value + "']");
+            if (r) {
+                r.checked = true;
+            }
+        },
+        setError: function(id, msg) {
+            var parent = elm.utils.closest(id, "elm-form-box");
+            parent.addError(msg);
+            // this.errorMessage = "There are errors in the form. Correct them before launching the job.";
+            this.hasErrors = true;
+        },
+        clearAllErrors: function() {
+            var selection = this.querySelectorAll("elm-form-box");
+            for (var i = 0; i < selection.length; i++) {
+                var sfb = selection[i];
+                sfb.clearErrors();
+            }
+            this.hasErrors = false;
+        },
+        computeHasErrors: function(hasErrors) {
+            return (hasErrors);
+        },
+        clear: function() {
+
+        }
+    };
+</script>

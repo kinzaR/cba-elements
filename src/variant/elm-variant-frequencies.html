@@ -1,0 +1,189 @@
+<link rel="import" href="../../../polymer/polymer.html">
+<dom-module id="elm-variant-frequencies">
+    <style is="custom-style"
+           include="iron-flex iron-flex-reverse iron-flex-alignment iron-flex-factors iron-positioning">
+        :host {
+            display: block;
+            position: relative;
+            width: 100%;
+        }
+
+        elm-table {
+            box-shadow: 0px 0px 2px 0px rgba(0, 0, 0, 0.2);
+            overflow-y: hidden;
+        }
+
+        elm-table::shadow #list {
+            min-height: 200px;
+        }
+
+        elm-table::shadow {
+            font-size: 11px;
+        }
+
+        elm-table::shadow .table-row {
+            height: 25px;
+        }
+
+        elm-table::shadow .table-header-field > .name.elm-table {
+            padding: 4px 0;
+        }
+
+        #mafChart {
+            border: 1px solid rgba(125, 125, 125, 0.4);
+            box-shadow: 0px 0px 2px 0px rgba(0, 0, 0, 0.2);
+            margin: 0 auto;
+            overflow-x: auto;
+            height: 350px;
+        }
+
+    </style>
+    <template>
+        <div hidden$="{{isEmpty}}" class="horizontal layout wrap center-justified">
+            <elm-table id="table" enable-export enable-paging></elm-table>
+            <div id="mafChart" hidden></div>
+        </div>
+        <div hidden$="{{!isEmpty}}" style="padding:20px 50px;">
+            No frequencies found.
+        </div>
+    </template>
+</dom-module>
+<script>
+    Polymer({
+        is: 'elm-variant-frequencies',
+        properties: {
+            row: {
+                type: Object,
+                observer: 'rowChanged'
+            },
+            isEmpty: {
+                value: false,
+                type: Boolean
+            }
+        },
+        ready: function () {
+            this.$.table.columns = this._columns;
+        },
+        _columns: [{
+            name: "study",
+            title: "Study",
+            width: 150
+        }, {
+            name: "population",
+            title: "Population",
+            width: 150
+        }, {
+            name: "refAllele",
+            title: "Ref. Allele",
+            width: 50
+        }, {
+            name: "altAllele",
+            title: "Alt. Allele",
+            width: 50
+        }, {
+            name: "refAlleleFreq",
+            title: "Ref. Allele Freq.",
+            cellTemplate: 'alleleFreqCT',
+            formula: function (row) {
+                var val = ".";
+                if (row.refAlleleFreq != null) {
+                    val = row.refAlleleFreq.toFixed(3);
+                }
+                return val;
+            },
+            width: 70
+        }, {
+            name: "altAlleleFreq",
+            title: "Alt. Allele Freq.",
+            formula: function (row) {
+                var val = ".";
+                if (row.altAlleleFreq != null) {
+                    val = row.altAlleleFreq.toFixed(3);
+                }
+                return val;
+            },
+            width: 70
+        }, {
+            name: "maf",
+            title: "MAF",
+            formula: function (row) {
+                return Math.min(row.refAlleleFreq, row.altAlleleFreq).toFixed(3);
+            },
+            width: 70
+        }],
+        rowChanged: function (neo, old) {
+            var me = this;
+
+            this.$.table.currentPage = 1;
+
+            if (neo) {
+                var variant = neo.chromosome + ":" + neo.start + ":" + neo.reference + ":" + neo.alternate;
+                CellBaseManager.get({
+                    species: 'hsapiens',
+                    category: 'genomic',
+                    subCategory: 'variant',
+                    resource: 'annotation',
+                    query: variant,
+                    //                    query: "19:45411941:T:C",
+                    async: false,
+                    success: function (response) {
+                        try {
+                            me.$.table.data = response.response[0].result[0].populationFrequencies;
+                            me.isEmpty = (me.$.table.data.length <= 0);
+                        } catch (e) {
+                            me.$.table.data = [];
+                            me.isEmpty = true;
+                        }
+                    }
+                });
+
+                var data = [];
+                var cat = [];
+                for (var i = 0; i < me.$.table.data.length; i++) {
+                    var elem = me.$.table.data[i];
+                    var maf = parseFloat(Math.min(elem.refAlleleFreq, elem.altAlleleFreq).toFixed(3));
+                    data.push(maf);
+                    cat.push(elem.study + "/" + elem.population);
+
+                }
+
+                var polarChart = new Highcharts.Chart({
+                    chart: {
+                        polar: true,
+                        renderTo: this.$.mafChart
+                    },
+                    credits: {
+                        enabled: false
+                    },
+                    legend: {
+                        enabled: false
+                    },
+                    title: {
+                        text: "Minor Allele Frequency",
+                        x: -80
+                    },
+                    xAxis: {
+                        categories: cat,
+                        tickmarkPlacement: 'on',
+                        lineWidth: 1
+                    },
+
+                    yAxis: {
+                        gridLineInterpolation: 'polygon',
+                        lineWidth: 0,
+                        max: 0.5
+                    },
+
+                    series: [{
+                        type: 'area',
+                        name: "MAF",
+                        data: data,
+                        pointPlacement: 'on'
+                    }]
+
+                });
+                this.$.mafChart.hidden = false;
+            }
+        }
+    });
+</script>

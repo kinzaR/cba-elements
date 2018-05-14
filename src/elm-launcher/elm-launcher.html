@@ -1,0 +1,167 @@
+<link rel="import" href="../../../polymer/polymer.html">
+<link rel="import" href="../../../iron-flex-layout/iron-flex-layout-classes.html">
+<script src="./test-apps.js"></script>
+<!--
+`elm-launcher`
+-->
+
+<dom-module id="elm-launcher">
+    <template>
+        <style is="custom-style" include="iron-flex iron-flex-reverse iron-flex-alignment iron-flex-factors iron-positioning">
+            :host {
+                font-size: 16px;
+            }
+
+            #dropdown {
+                background-color: var(--dark-primary-color, #2F2F2F);
+                position: absolute;
+                margin-top: 20px;
+                box-shadow: 0px 0px 10px 5px rgba(0, 0, 0, 0.30);
+                opacity: 0;
+                padding: 10px 10px 10px 10px;
+                width: 460px;
+                max-height: 70vh;
+                overflow-y: auto;
+                z-index: 1000;
+            }
+
+            .button {
+                margin: 4px 4px 4px 4px;
+                color: white;
+                text-align: center;
+                border: transparent solid 1px;
+                width: 95px;
+                height: 95px;
+            }
+
+            .button > a {
+                color: inherit;
+                text-decoration: none;
+            }
+
+            .button:hover {
+                border: solid 1px;
+                border-color: var(border-color, white);
+            }
+
+            .icon {
+                max-height: 64px;
+                max-width: 64px;
+            }
+
+            .icon.fa {
+                color: white;
+                font-size: 3em;
+            }
+        </style>
+        <content id="icon"></content>
+        <div id="dropdown" hidden class="layout horizontal wrap around-justified">
+            <template is="dom-repeat" items="{{_applicationsList}}">
+                <a href="{{item.link}}" target="_blank" class="button layout vertical around-justified center">
+                    <template is="dom-if" if="[[_hasIconUrl(item.icon)]]">
+                        <img src="{{item.icon}}" alt="" class="icon">
+                    </template>
+                    <template is="dom-if" if="[[!_hasIconUrl(item.icon)]]">
+                        <!-- Default Icon if there is no icon link -->
+                        <svg class="icon" viewBox="0 0 1000 1000" sodipodi:docname="default.svg">
+                            <path style="stroke:white" d="M500,10C229.4,10,10,229.4,10,500s219.4,490,490,490s490-219.4,490-490S770.6,10,500,10z M500,921.2C267.4,921.2,78.8,732.6,78.8,500C78.8,267.4,267.4,78.8,500,78.8c232.6,0,421.2,188.6,421.2,421.2S732.6,921.2,500,921.2z" id="path8" />
+                            <path d="M391.8,681.7c0,0-7.7,7.8-11.3,11.5c-12.5,12.7-12.5,33.3,0,46c8.9,9,21.5,11.3,32.7,7.5l42-37.3l-45.3-46L391.8,681.7z" id="path10" />
+                            <path d="M573.9,399.1l-45.3,46l25.5,25.9c12.5,12.7,12.5,33.3,0,46l-64.8,65.7l-66.8-67.9c-12.4-12.6-12.4-33,0-45.6l64.9-65.9l0.5,0.5l45.3-46l-0.5-0.5l50.8-51.6c12.4-12.6,12.4-33,0-45.6s-32.5-12.6-44.9,0l-50.8,51.6l-50.8-51.5c-12.5-12.7-32.8-12.7-45.3,0c-12.5,12.7-12.5,33.3,0,46l50.8,51.6l-87.3,88.7c-24.8,25.2-24.8,66,0,91.2l194.6,197.7l12.5,7.5c11,3.7,23.6,1.4,32.4-7.5c12.4-12.6,12.4-33,0-45.6c-3.6-3.7-11.2-11.4-11.2-11.4l-48.9-49.6l87.5-88.7c25-25.4,25-66.5,0-91.9L573.9,399.1z" id="path12" />
+                            </g>
+                            <path style="fill:#ffffff;fill-opacity:1;stroke-width:3;stroke-miterlimit:4;stroke-dasharray:none" d="M 444.54432,984.29356 C 376.27396,977.10805 297.63981,948.71945 236.71877,909.26411 131.41618,841.06517 59.324284,740.39301 26.009051,615.02025 17.980055,584.8053 16.741277,569.20627 16.841214,499.57627 16.946875,425.95858 17.917282,415.52182 28.178964,377.63835 50.940585,293.60836 94.737428,218.01906 156.37824,156.37824 218.01906,94.737428 293.60836,50.940585 377.63835,28.178964 415.52182,17.917282 425.95858,16.946875 499.57627,16.841214 588.08462,16.71418 615.17318,21.364823 682.1603,48.187781 906.42737,137.98866 1032.3558,386.25172 972.08958,619.77195 c -23.16496,89.75966 -61.01979,155.2614 -129.03801,223.27962 -82.85466,82.85466 -177.1667,128.4736 -292.62784,141.5447 -42.80284,4.84564 -57.35966,4.80398 -105.87941,-0.30254 l 0,-1.7e-4 z m 94.9425,-63.275 C 744.10331,900.02097 899.95915,744.70551 920.86733,540.96047 933.74733,415.44842 889.03907,290.93736 798.62712,200.52543 745.14161,147.03992 681.17004,109.99393 607.62712,89.917157 576.11835,81.315453 562.32864,80.11514 497.45763,80.327564 429.21426,80.55103 420.26608,81.492504 385.16949,92.141869 240.63859,135.99691 135.99691,240.63859 92.141869,385.16949 81.481208,420.30331 80.554784,429.14187 80.372258,497.45763 c -0.172966,64.73894 1.04828,78.72487 9.620017,110.16949 20.135295,73.86445 57.265215,137.9661 110.594955,190.93275 69.90473,69.42877 158.58428,112.25149 253.13391,122.23649 18.22878,1.92508 35.32471,3.75377 37.99094,4.06372 2.66618,0.31017 24.16483,-1.41868 47.77474,-3.84152 z" id="path4144" inkscape:connector-curvature="0" />
+                            <path style="fill:#ffffff;fill-opacity:1;stroke-width:3;stroke-miterlimit:4;stroke-dasharray:none" d="M 558.89831,737.77356 C 546.48755,730.23674 351.12426,530.87285 345.47707,519.98195 c -2.63951,-5.09043 -4.7991,-18.99973 -4.7991,-30.90954 l 0,-21.65422 51.36041,-55.08428 51.36041,-55.08429 -27.43513,-28.41786 c -15.08932,-15.62982 -28.71617,-32.45405 -30.28188,-37.38718 -6.55699,-20.65924 15.67252,-43.9255 35.84958,-37.52155 4.23508,1.34417 19.57271,14.74018 34.08361,29.76893 14.51089,15.02874 28.28732,27.32499 30.61428,27.32499 2.32696,0 17.99612,-13.34746 34.82037,-29.66102 33.55824,-32.53961 42.90804,-35.58009 59.22773,-19.2604 20.95476,20.95476 17.95035,25.66399 -78.58243,123.173 -110.3043,111.4198 -107.64067,103.01354 -50.84746,160.47153 l 38.13559,38.58197 38.13559,-38.58197 c 45.87474,-46.41172 47.99538,-54.72433 21.33842,-83.64372 l -16.79717,-18.22278 21.04796,-20.73146 21.04795,-20.73146 25.7317,25.27773 c 14.15243,13.90275 28.4472,30.42669 31.76616,36.71985 7.24363,13.73483 7.88409,42.758 1.22636,55.57373 -2.64446,5.09044 -25.52582,30.55893 -50.84746,56.59665 -25.32164,26.03773 -46.03934,49.17069 -46.03934,51.40659 0,2.2359 15.41852,20.66703 34.26338,40.95806 29.75498,32.0384 33.91279,38.37662 31.59898,48.16967 -3.05106,12.91344 -16.91861,26.17814 -27.13687,25.95725 -3.82021,-0.0825 -10.75939,-2.46602 -15.4204,-5.29661 z" id="path4146" inkscape:connector-curvature="0" />
+                            <path style="fill:#ffffff;fill-opacity:1;stroke-width:3;stroke-miterlimit:4;stroke-dasharray:none" d="m 385.74093,738.67551 c -17.66167,-13.89267 -15.3091,-31.99612 7.00364,-53.89442 l 18.16831,-17.83084 20.77115,21.08825 c 11.42413,11.59853 19.93272,21.84489 18.90797,22.76969 -23.37578,21.09561 -43.81448,36.64944 -48.15963,36.64944 -3.03973,0 -10.55088,-3.95196 -16.69144,-8.78212 z" id="path4148" inkscape:connector-curvature="0" />
+                        </svg>
+                    </template>
+                    <span>{{item.name}}</span>
+                </a>
+            </template>
+        </div>
+    </template>
+    <script>
+        Polymer({
+            is: "elm-launcher",
+
+            properties: {
+                dataSrc: String,
+
+                _applicationsList: Object
+            },
+
+            ready: function() {
+                var icon = Polymer.dom(this).children[0]; // Select the icon established as button
+                this._getAppInfo();
+
+                icon.addEventListener("click", this._toogle.bind(this));
+
+                Polymer.dom(this).setAttribute("tabindex", -1); // To make blur work
+                this.addEventListener("blur", this._hide.bind(this));
+            },
+
+            _toogle: function() {
+                var dropdown = this.$.dropdown;
+                if (dropdown.hidden) {
+                    dropdown.removeAttribute("hidden");
+                    this._fadeIn(dropdown);
+                } else {
+                    dropdown.setAttribute("hidden", true);
+                    dropdown.style.opacity = 0;
+                }
+                this._setDropdownPosition();
+            },
+
+            _hide: function() {
+                // Made async function to allow link to work
+                this.async(function() {
+                    Polymer.dom(this.$.dropdown).setAttribute("hidden", true);
+                }, 200);
+            },
+
+            _getAppInfo: function() {
+                // var request = new XMLHttpRequest();
+                //
+                // var that = this;
+                //
+                // request.addEventListener("load", function() {
+                //     that._applicationsList = JSON.parse(this.responseText);
+                // });
+                //
+                // request.open("GET", this.dataSrc);
+                // request.send();
+                this._applicationsList = elm_LAUNCHER_APPS;
+            },
+
+            _hasIconUrl: function(appIcon) {
+                return appIcon !== "";
+            },
+
+            _fadeIn: function(el) {
+                el.style.opacity = 0;
+
+                var last = +new Date();
+                var tick = function() {
+                    el.style.opacity = +el.style.opacity + (new Date() - last) / 400;
+                    last = +new Date();
+
+                    if (+el.style.opacity < 1) {
+                        (window.requestAnimationFrame && requestAnimationFrame(tick)) || setTimeout(tick, 16);
+                    }
+                };
+
+                tick();
+            },
+
+            _setDropdownPosition: function() {
+                var dropdownBCR = this.$.dropdown.getBoundingClientRect();
+                var iconBCR = Polymer.dom(this).children[0].getBoundingClientRect();
+                var calcMargin = dropdownBCR.width / 2 - iconBCR.width / 2;
+
+                if (dropdownBCR.right + calcMargin > window.innerWidth) {
+                    this.$.dropdown.style.marginLeft = (-dropdownBCR.width + iconBCR.width) + "px";
+                } else if (dropdownBCR.left - calcMargin >= 0) {
+                    this.$.dropdown.style.marginLeft = (-calcMargin) + "px";
+                }
+            }
+        })
+    </script>
+</dom-module>

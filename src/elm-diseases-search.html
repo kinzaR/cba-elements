@@ -1,0 +1,212 @@
+<dom-module id="elm-diseases-search">
+    <style is="custom-style" include="iron-flex iron-flex-reverse iron-flex-alignment iron-flex-factors iron-positioning">
+        :host {
+            display: block;
+            position: relative;
+            min-width: 700px;
+            max-height: 500px;
+            padding: 10px;
+        }
+
+        .but {
+            color: #445D76;
+            text-align: center;
+            height: 20px;
+            width: 115px;
+            line-height: 20px;
+            margin-top: 5px;
+        }
+
+        #allDiseases,
+        #selectedDiseases {
+            width: 95%;
+            min-height: 345px;
+            height: calc(100vh - 450px);
+            border: 1px solid #d3d3d3;
+        }
+
+        .allDiseases {
+            width: 50%;
+            margin-right: 10px;
+        }
+
+        .selectedDiseases {
+            width: 50%;
+            margin-left: 10px;
+        }
+
+        .add-but {
+            font-size: 13px;
+            background-color: #ed9c33 !important;
+            color: #FFFFFF !important;
+            text-align: center;
+            height: 30px;
+            width: 150px;
+            line-height: 30px;
+            margin-top: 10px;
+        }
+    </style>
+    <template>
+        <div class="disease horizontal layout">
+            <div class="allDiseases">
+                <elm-table id="allDiseases" class="flex" columns="{{allDiseaseColumns}}" request="{{request}}" enable-remote enable-select enable-filter enable-paging hide-column-selector page-size="15"></elm-table>
+                <div class="elm-btn elm-btn-shdw but" on-click="handleAddSelectedDiseases"><i class="fa fa-plus-square-o"></i>&nbsp; Add
+                </div>
+            </div>
+            <div class="selectedDiseases">
+                <elm-table id="selectedDiseases" class="flex" columns="{{diseaseColumns}}" data="{{selectedDisease}}" enable-paging hide-column-selector on-removerow="handleRemoveElement">
+                </elm-table>
+                <div class="elm-btn elm-btn-shdw but" on-click="handleClearSelectedDiseases">
+                    Clear
+                </div>
+            </div>
+        </div>
+        <div class="horizontal layout flex" style="width: 100%">
+            <div class="flex">
+            </div>
+            <div class="elm-btn elm-btn-shdw add-but" on-click="handleAddSelected"> Add Selected
+            </div>
+        </div>
+
+    </template>
+
+    <script>
+        Polymer({
+            is: "elm-diseases-search",
+            properties: {
+                selectedDisease: {
+                    type: Array,
+                    value: function() {
+                        return [];
+                    }
+                },
+                mapSelectedDisease: {
+                    type: Object,
+                    value: function() {
+                        return {};
+                    }
+                },
+                diseaseValue: {
+                    type: Array,
+                    notify: true,
+                    value: function() {
+                        return [];
+                    }
+                },
+                url: {
+                    type: String,
+                    value: "",
+                    observer: 'urlChanged'
+                },
+                request: {
+                    type: Object
+                },
+                numTotalResults: {
+                    type: Number,
+                    notify: true
+                },
+            },
+            ready: function() {
+                var me = this;
+                this.getDiseases();
+
+                this.allDiseaseColumns = [{
+                    name: 'phenotype',
+                    title: 'Phenotype',
+                    type: 'text',
+                    width: 450
+                        // }, {
+                        //     name: 'source',
+                        //     title: 'Source',
+                        //     type: 'select',
+                        //     options: ["clinvar", "cosmic"],
+                        //     width: 125
+                }];
+                this.diseaseColumns = [{
+                    name: 'phenotype',
+                    title: 'Phenotype',
+                    type: 'text',
+                    width: 415
+                        // }, {
+                        //     name: 'source',
+                        //     title: 'Source',
+                        //     type: 'select',
+                        //     options: ["clinvar", "cosmic"],
+                        //     width: 110
+                }, {
+                    name: '',
+                    title: '',
+                    type: 'action',
+                    width: 30
+                }];
+            },
+            handleAddSelectedDiseases: function() {
+                for (var i = 0; i < this.$.allDiseases.selected.length; i++) {
+                    var disease = this.$.allDiseases.selected[i];
+                    if (this.mapSelectedDisease[disease.phenotype] == null) {
+                        this.mapSelectedDisease[disease.phenotype] = true;
+                        this.push('selectedDisease', disease);
+                    }
+                }
+            },
+            handleClearSelectedDiseases: function(e) {
+                this.selectedDisease = [];
+                this.mapSelectedDisease = {};
+            },
+            handleAddSelected: function(e) {
+                this.set('diseaseValue', this.selectedDisease);
+                this.fire('added');
+            },
+            handleRemoveElement: function(e) {
+                var key = e.detail.row.phenotype;
+                this.mapSelectedDisease[key] = null;
+
+            },
+            getDiseases: function() {
+                var me = this;
+                var url = BiodbManager.clinical.fetch({
+                    request: {
+                        url: true
+                    }
+                });
+                this.url = url;
+                console.log(url);
+            },
+
+            urlChanged: function(neo, old) {
+                var me = this;
+                if (neo == null || neo == "") {
+                    return;
+                }
+                this.request = {
+                    url: this.url,
+                    parse: function(response) {
+                        return me._parse(response);
+                    },
+                    parseTotal: function(response) {
+                        var total = me._parseTotal(response);
+
+                        me.set('numTotalResults', total);
+                        return total;
+                    },
+                };
+            },
+            _parse: function(response) {
+                var me = this;
+                if (response.result != null) {
+                    data = response.result;
+                } else {
+                    data = [];
+                }
+                return data;
+            },
+            _parseTotal: function(response) {
+                var total = 0;
+                if (response.result != null) {
+                    total = response.numTotalResults;
+                }
+                return total;
+            },
+        })
+    </script>
+</dom-module>

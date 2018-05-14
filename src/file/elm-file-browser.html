@@ -1,0 +1,814 @@
+<link rel="import" href="../../../polymer/polymer.html">
+<link rel="import" href="../../../iron-flex-layout/iron-flex-layout-classes.html">
+
+<link rel="import" href="elm-file-upload.html">
+<link rel="import" href="elm-folder-list.html">
+<link rel="import" href="elm-file-preview.html">
+<link rel="import" href="elm-image-preview.html">
+<link rel="import" href="elm-folder-tree.html">
+
+
+<dom-module id="elm-file-browser">
+    <style is="custom-style" include="iron-flex iron-flex-reverse iron-flex-alignment iron-flex-factors iron-positioning">
+         :host {
+            display: block;
+            position: relative;
+            box-sizing: border-box;
+            /*left: 0;*/
+            /*right: 0;*/
+            /*margin: 0px auto 0px auto;*/
+            height: 100%;
+            width: 100%;
+            transition: all 0.2s;
+            background-color: inherit;
+            /*width: 650px;*/
+            /*height: 400px;*/
+             overflow:auto;
+        }
+
+        #topbar,
+        #botbar {
+            box-sizing: border-box;
+            height: 30px;
+            padding: 0 7px;
+            background-color: var(--light-secondary-color);
+        }
+
+        #topbar {
+            border-bottom: 1px solid rgba(130, 130, 130, 0.4);
+        }
+
+        #botbar {
+            border-top: 1px solid rgba(130, 130, 130, 0.4);
+        }
+
+        .quota-bar {
+            box-sizing: border-box;
+            height: 20px;
+            padding: 0 7px;
+            border-top: 1px solid rgba(130, 130, 130, 0.5);
+            color: var(--secondary-text-color);
+            background-color: var(--hover-color);
+        }
+
+        #main {
+            position: relative;
+            height: calc(100% - 60px);
+        }
+
+        #mainmenu {
+            position: relative;
+            /*position: absolute;*/
+            box-sizing: border-box;
+            width: 30%;
+            /*width: 200px;*/
+            min-width: 100px;
+            height: 100%;
+            border-right: 1px solid rgba(130, 130, 130, 0.4);
+        }
+
+        #mainmenu>.resizer {
+            width: 2px;
+            height: 100%;
+            position: absolute;
+            right: 0;
+            bottom: 0;
+            cursor: col-resize;
+            display: none;
+        }
+
+        #mainmenu:hover>.resizer {
+            display: inherit;
+            background-color: #E1E3E5;
+            border-left: 1px solid #DDD;
+        }
+        /*#mainmenubar {
+            box-sizing: border-box;
+            background-color: rgba(125, 125, 125, 0.1);
+            padding: 3px 7px;
+            height: 30px;
+            border-bottom: 1px solid rgba(125, 125, 125, 0.5);
+        }*/
+
+        #mainmenucontent {
+            position: relative;
+            height: calc(100% - 20px);
+            overflow-y: auto;
+            width: 100%;
+        }
+
+        #maincontent {
+            position: relative;
+            /*position: absolute;*/
+            /*left: 180px;
+            top: 0;*/
+            width: 70%;
+            /*width: calc(100% - 200px);*/
+            min-width: 280px;
+            height: 100%;
+            white-space: nowrap;
+        }
+
+        #maininfo {
+            box-sizing: border-box;
+            width: 150px;
+            height: 100%;
+            border-left: 1px solid rgba(130, 130, 130, 0.4);
+            word-wrap: break-word;
+        }
+
+        #breadcrums {
+            box-sizing: border-box;
+            padding-left: 5px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        #breadcrums>span.clickable:hover {
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
+        elm-folder-list {
+            height: 100%;
+        }
+
+        elm-file-upload {
+            box-sizing: border-box;
+            background-color: #fafafa;
+        }
+
+        #searchBar {
+            margin-left: 5px;
+            margin-right: 5px;
+        }
+
+        #searchBar>div {
+            margin: 0 1px 0 1px;
+        }
+
+        .bar>div {
+            margin-right: 5px;
+        }
+
+        .wrapped-text {
+            white-space: pre-wrap;
+        }
+
+        .quota-.75 {
+            color: #FF3419
+        }
+
+        .quota-0.9 {
+            color: #DD1A00
+        }
+
+        .quota-1 {
+            color: #B31D09;
+        }
+
+        #filePreview {
+            height: 600px;
+            width: 800px;
+        }
+    </style>
+    <template>
+        <div id="topbar" class="horizontal layout center">
+            <div id="breadcrums" class="flex">
+                <b>/</b>
+                <template is="dom-repeat" items="{{folders}}">
+                    <span class="clickable" on-click="handleBreadcrumClick" folder="{{item}}">{{item.n}}</span>
+                    <b>/</b>
+                </template>
+
+            </div>
+            <div hidden$="{{!loading}}">
+                <i class="fa fa-circle-o-notch fa-spin"></i>
+            </div>
+        </div>
+
+        <div id="main" class="horizontal layout flex">
+            <div id="mainmenu" hidden$="{{hideTree}}">
+                <!-- <div id="mainmenubar" class="horizontal layout">
+                    <div class="bar horizontal layout flex">
+                    </div>
+                    <div class="bar horizontal layout">
+                    </div>
+                </div> -->
+                <div id="mainmenucontent">
+                    <elm-folder-tree tree="{{userData.tree}}" on-treeitemclick="handleTreeItemClick"></elm-folder-tree>
+                </div>
+                <div class="quota-bar horizontal layout center center-justified">
+                    <span class$="{{computeSizeClass(userData)}}">{{computeSize(userData, userData.diskUsage)}}</span>
+                    <span>&nbsp;of&nbsp;</span>
+                    <span>{{computeSize(userData, userData.diskQuota)}}</span>
+                </div>
+                <div class="resizer" id="mainmenuresizer"></div>
+            </div>
+            <div id="maincontent">
+                <elm-folder-list id="folderList" user-data="{{userData}}" search-by-type="{{searchByType}}" search-by="{{searchBy}}" on-fileselect="handleFileSelect" on-upload-file="handleUploadFile" on-back="handleBackFolder" on-need-refresh="handleNeedRefresh" folder="{{folder}}" files="{{filteredFiles}}" mode="{{mode}}" on-filedblclick="handleFileDblClick" on-previewfile="handlePreviewFile" disable-icon-view="{{disableIconView}}" columns="{{columns}}" hide-file-column="{{hideFileColumn}}" hide-upload-btn="{{hideUploadBtn}}" hide-download-btn="{{hideDownloadBtn}}">
+                </elm-folder-list>
+            </div>
+        </div>
+
+
+        <div id="botbar" class="horizontal layout center">
+            <div class="flex"></div>
+            <content id="customButtons" select=".custom-button"></content>
+            <div id="searchBar" class="horizontal layout">
+                <div hidden="{{hideFilterBtns}}" class="elm-btn elm-btn-shdw filter-file" on-click="handleSearchByType" data-checked$="{{computeSearchByType(searchByType, 'all')}}" data-value="all">All</div>
+                <div hidden="{{hideFilterBtns}}"class="elm-btn elm-btn-shdw filter-file" on-click="handleSearchByType" data-checked$="{{computeSearchByType(searchByType, 'job')}}" data-value="job"><i class="fa fa-flask"></i></div>
+                <div hidden="{{hideFilterBtns}}"class="elm-btn elm-btn-shdw filter-file" on-click="handleSearchByType" data-checked$="{{computeSearchByType(searchByType, 'folder')}}" data-value="folder"><i class="fa fa-folder"></i></div>
+                <div hidden="{{hideFilterBtns}}"class="elm-btn elm-btn-shdw filter-file" on-click="handleSearchByType" data-checked$="{{computeSearchByType(searchByType, 'file')}}" data-value="file"><i class="fa fa-file"></i></div>
+                <div class="flex" style="margin-left:5px;">
+                    <input id="searchInput" class="elm" type="text" style="width:100%;" placeholder="Search by name..." value="{{searchBy::input}}">
+                </div>
+            </div>
+            <div hidden$="{{!checkFileModeOk(mode,selectedFile)}}" class="elm-btn elm-btn-shdw" style="width:100px;" on-click="handleFileModeOk">
+                OK
+            </div>
+        </div>
+
+        <elm-panel modal fixed movable closable hidden id="uploadFilePanel">
+            <div class="header">
+                <i class="fa fa-cloud-upload"></i> &nbsp; Upload file
+            </div>
+            <elm-file-upload class="container" id="uploadFile" on-file-uploaded="handleFileUploaded" selected-folder="{{folder}}" bioformats="{{bioformats}}"></elm-file-upload>
+        </elm-panel>
+
+        <elm-panel modal closable hidden id="filePreviewPanel">
+            <div class="header">
+                <i class="fa fa-eye"></i> File Preview
+            </div>
+            <elm-file-preview class="container" id="filePreview"></elm-file-preview>
+            <!--<div class="container">-->
+            <!--<code class="wrapped-text">{{contentData}}</code>-->
+            <!--</div>-->
+        </elm-panel>
+        <elm-panel modal closable hidden id="imagePreviewPanel">
+            <div class="header">
+                <i class="fa fa-eye"></i> Image Preview
+            </div>
+            <elm-image-preview class="container" id="imagePreview"></elm-image-preview>
+        </elm-panel>
+
+    </template>
+
+</dom-module>
+<script>
+    Polymer({
+        is: "elm-file-browser",
+        properties: {
+            userData: {
+                type: Object,
+                observer: 'userDataChanged'
+            },
+            enableSelectOk: {
+                type: Boolean,
+                value: false,
+                reflectToAttribute: true
+            },
+            folder: {
+                type: Object,
+                notify: true
+            },
+            selectedFile: {
+                type: Object,
+                notify: true,
+                value: function() {
+                    return null;
+                }
+            },
+            folders: {
+                type: Array,
+                notify: true,
+                value: function() {
+                    return []
+                }
+            },
+            treeIndex: {
+                type: Object,
+                value: function() {
+                    return {}
+                }
+            },
+            files: {
+                type: Array,
+                notify: true
+            },
+            filteredFiles: {
+                type: Array,
+                notify: true
+            },
+            bioformats: {
+                type: Array,
+                value: function() {
+                    return [];
+                },
+                notify: true
+            },
+            showHidden: {
+                type: Boolean,
+                value: false,
+                reflectToAttribute: true
+            },
+            disableIconView: {
+                type: Boolean,
+                value: false,
+                reflectToAttribute: true
+            },
+            contentData: {
+                type: String,
+                value: ""
+            },
+            mode: {
+                type: String,
+                reflectToAttribute: true,
+                value: ""
+            },
+            loading: {
+                type: Boolean,
+                value: false
+            },
+            enableAutoIndex: {
+                type: Boolean,
+                value: false,
+                reflectToAttribute: true
+            },
+            searchBy: {
+                type: String,
+                value: "",
+                notify: true
+            },
+            searchByType: {
+                type: String,
+                value: function() {
+                    return ["all"];
+                },
+                reflectToAttribute: true
+            },
+            hideTree: {
+                type: Boolean,
+                value: false,
+                reflectToAttribute: true
+            },
+            columns: {
+                type: Array
+            },
+            hideFileColumn: {
+                type: Boolean,
+                value: false,
+                reflectToAttribute: true
+            },
+            hideUploadBtn: {
+                type: Boolean,
+                value: false,
+                reflectToAttribute: true
+            },
+            hideDownloadBtn: {
+                type: Boolean,
+                value: false,
+                reflectToAttribute: true
+            },
+            hideFilterBtns: {
+                type: Boolean,
+                value: false,
+                reflectToAttribute: true
+            }
+        },
+        userDataChanged: function(neo, old) {
+            // console.log(neo);
+            if (neo) {
+                this._setInitialSelection();
+
+                this.treeIndex = {};
+                this._createTreeIndex(this.treeIndex, this.userData.tree);
+                //Set root open by default
+                var root = this.userData.tree[0];
+                if (root != null) {
+                    root.open = true;
+                }
+                // console.log(this.treeIndex);
+                // console.log(this.userData.tree);
+            } else {
+                this.clean();
+            }
+        },
+        _createTreeIndex: function(index, tree) {
+            var process = function(index, file) {
+                if (index[file.path] == null) {
+                    index[file.path] = file;
+                    for (var i = 0; i < file.f.length; i++) {
+                        process(index, file.f[i]);
+                    }
+                }
+            }
+            for (var i = 0; i < tree.length; i++) {
+                process(index, tree[i]);
+            }
+        },
+        clean: function() {
+            this.set('folder', null);
+            this.set('selectedFile', null);
+            this.set('folders', []);
+            this.set('files', []);
+            this.set('filteredFiles', []);
+            this.set('loading', false);
+            this._setInitialSelection();
+            // this.set('contentData', '');
+        },
+        reset: function() {
+            this.clean();
+        },
+        ready: function() {
+            var me = this;
+            this._parentPanel = elm.utils.closest(this, 'elm-panel');
+
+            me._setInitialSelection();
+            if (this._parentPanel != null) {
+                this._parentPanel.addEventListener('hidden', function(e) {
+                    if (e.detail == false) {
+                        me._setInitialSelection();
+                    }
+                });
+            }
+            var els = this.$.botbar.querySelectorAll('.custom-button');
+            for (var i = 0; i < els.length; i++) {
+                var el = els[i];
+                el.setAttribute('hidden', '');
+            }
+
+            var resizer = this.$.mainmenuresizer;
+            var mainmenu = this.$.mainmenu;
+            var maincontent = this.$.maincontent;
+
+            var startX, startWidth, startMinContent, startContent, startMinMenu;
+
+            function initDrag(e) {
+                document.body.classList.add('elm-nosel');
+                startX = e.clientX;
+                startWidth = parseInt(document.defaultView.getComputedStyle(mainmenu).width, 10);
+                startMinContent = parseInt(document.defaultView.getComputedStyle(maincontent).minWidth, 10);
+                startContent = parseInt(document.defaultView.getComputedStyle(maincontent).width, 10);
+                startMinMenu = parseInt(document.defaultView.getComputedStyle(mainmenu).minWidth, 10);
+                mainWidth = parseInt(document.defaultView.getComputedStyle(me.$.main).width, 10);
+                document.documentElement.addEventListener('mousemove', doDrag, false);
+                document.documentElement.addEventListener('mouseup', stopDrag, false);
+            }
+
+            function doDrag(e) {
+                var dif = e.clientX - startX;
+                var menuWidth = startWidth + dif;
+                var contentWidth = startContent - dif;
+                var main = menuWidth + contentWidth;
+                var maindif = mainWidth - main;
+
+                if (contentWidth > startMinContent && menuWidth > startMinMenu) {
+                    if (maindif != 0) {
+                        startWidth = startWidth + Math.ceil(maindif / 2);
+                        contentWidth = contentWidth + Math.floor(maindif / 2);
+                    }
+                    mainmenu.style.width = menuWidth + 'px';
+                    me.$.maincontent.style.width = "calc(100% - " + menuWidth + "px)";
+                }
+
+            }
+
+            function stopDrag(e) {
+                document.documentElement.removeEventListener('mousemove', doDrag, false);
+                document.documentElement.removeEventListener('mouseup', stopDrag, false);
+                document.body.classList.remove('elm-nosel');
+            }
+
+            if (this.hideTree) {
+                this.$.maincontent.style.width = "100%";
+            }
+
+            resizer.addEventListener('mousedown', initDrag, false);
+        },
+        checkFileModeOk: function(mode, selectedFile) {
+            if (this.enableSelectOk == true) {
+                if (mode === 'file' && selectedFile != null && selectedFile._id != null && selectedFile.type == 'FILE') {
+                    return true;
+                }
+                if (mode === 'folder') {
+                    if (selectedFile == null) {
+                        return true
+                    } else if (selectedFile._id != null && selectedFile.type == 'FOLDER' && selectedFile.job == null) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        },
+        handleFileDblClick: function(e) {
+            var file = e.detail;
+            if (file.type == 'FOLDER') {
+                this.openFolder(file._id)
+            } else if (file.type == "FILE") {
+                if (this.mode == '') {
+                    if (file.format.indexOf("image") == 0) {
+                        this.previewImage(file._id);
+                    } else {
+                        this.previewFile(file._id);
+                    }
+                }
+                if (this.mode == 'file') {
+                    if (this.checkFileModeOk(this.mode, this.selectedFile)) {
+                        this._parentPanel.hidden = true;
+                        this.fire('ok-click');
+                    }
+                }
+            }
+        },
+        previewFile: function(fileId) {
+            this.$.filePreviewPanel.show();
+            this.$.filePreview.fileId = fileId;
+        },
+        previewImage: function(fileId) {
+            this.$.imagePreviewPanel.show();
+            this.$.imagePreview.fileId = fileId;
+        },
+        handlePreviewFile: function(e) {
+            var file = this.selectedFile;
+
+            if (file.format.indexOf("image") == 0) {
+                this.previewImage(file._id);
+            } else {
+
+                this.previewFile(file._id);
+            }
+        },
+        handleFileModeOk: function(e) {
+            this._parentPanel.hidden = true;
+            this.fire('ok-click');
+        },
+        _setInitialSelection: function() {
+            if (this._parentPanel != null && this._parentPanel.hidden === false && this.userData != null) {
+                var folderId = (this.folder) ? this.folder._id : this.userData.home._id
+                this.refreshFolderFiles(folderId);
+            }
+            if (this._parentPanel == null && this.userData != null) {
+                var folderId = (this.folder) ? this.folder._id : this.userData.home._id
+                this.refreshFolderFiles(folderId);
+            }
+        },
+        handleFileSelect: function(e) {
+            var file = e.detail.file;
+            this.selectedFile = file;
+            this._checkCustomButtons();
+            if (file != null) {
+                console.log(e.detail.file);
+            }
+        },
+        openFolder: function(folderId, cb) {
+            this.files = [];
+            this.refreshFolderFiles(folderId, cb);
+        },
+        refreshFolderFiles: function(folderId, cb) {
+            var me = this;
+            this.set('loading', true);
+            this._getFilesInFolder(folderId, function(filteredFiles, file) {
+                if (me.selectedFile != null) {
+                    var foundFile;
+                    for (var i = 0; i < filteredFiles.length; i++) {
+                        var f = filteredFiles[i];
+                        if (f._id == me.selectedFile._id) {
+                            foundFile = f;
+                        }
+                    }
+                    me.set('selectedFile', foundFile);
+                } else {
+                    me.set('selectedFile', null);
+                }
+
+                me.set('folder', file);
+                me.set('filteredFiles', filteredFiles);
+                me.set('files', file.files);
+                me.fire('openfolder', {
+                    files: file.files,
+                    filteredFiles: filteredFiles
+                });
+
+                me.refresFoldersPath();
+
+                me.set('loading', false);
+                if(cb){
+                    cb();
+                }
+            });
+        },
+        refreshFolderList: function() {
+            this.$.folderList.refreshFolderList();
+        },
+        refresFoldersPath: function() {
+            var index = this.treeIndex;
+            var f = index[this.folder.path];
+            var folders = [];
+            while (f.parent != null) {
+                folders.push(f);
+                f = f.parent;
+            }
+            this.set('folders', folders.reverse());
+        },
+        handleBreadcrumClick: function(e) {
+            var me = this;
+            var folderId = e.currentTarget.folder._id;
+            this.files = [];
+            this.filteredFiles = [];
+            this.refreshFolderFiles(folderId);
+        },
+        handleTreeItemClick: function(e) {
+            var me = this;
+            if (this.folder._id !== e.detail._id) {
+                this.loading = true;
+                this.refreshFolderFiles(e.detail._id);
+            }
+        },
+        handleBackFolder: function(e) {
+            var me = this;
+            var folderId;
+            var idx = this.folders.length - 2;
+            if (this.folders.length > 0 && idx >= 0) {
+                folderId = this.folders[idx]._id;
+            } else {
+                folderId = this.userData.home._id;
+            }
+            this.files = [];
+            this.filteredFiles = [];
+            this.refreshFolderFiles(folderId);
+        },
+
+        handleNeedRefresh: function(e) {
+            this.refreshFolderFiles(this.folder._id);
+        },
+        handleUploadFile: function(e) {
+            this.$.uploadFilePanel.hidden = !this.$.uploadFilePanel.hidden;
+        },
+        handleFileUploaded: function(e) {
+            this.refreshFolderFiles(this.folder._id);
+            this.$.uploadFilePanel.hidden = true;
+        },
+        handleLoading: function(e) {
+            this.fire("loading")
+        },
+
+        /* Private methods */
+        computeAngleIcon: function(el) {
+            if (el) {
+                return false;
+            }
+            return true;
+        },
+        _getFilesInFolder: function(folderId, callback) {
+            // console.log(folderId);
+            var me = this;
+
+            var bfList = [];
+            if (this.bioformats.length > 0) {
+                var bfList = ['NONE'];
+                for (var i = 0; i < this.bioformats.length; i++) {
+                    var bf = this.bioformats[i];
+                    bfList.push(bf.value);
+                }
+            }
+
+            var query = {
+                //                    status:'READY,STAGED,MISSING',
+                status: 'READY',
+                type: 'FILE,FOLDER'
+            };
+
+            if (bfList.length > 0 && (this.mode === 'file' || this.mode === 'folder')) {
+                query.bioformat = bfList.join(',');
+            }
+
+            CbaManager.files.list({
+                id: folderId,
+                query: query,
+                request: {
+                    async: true,
+                    success: function(response) {
+                        if (response.response[0].error == null) {
+                            var file = response.response[0].results[0];
+                            var filteredFiles = me._filterFiles(file.files);
+                            callback(filteredFiles, file);
+                        } else {
+                            console.log(response.response[0].error);
+                        }
+                    },
+                    error: function() {
+                        console.log('Server error, try again later.');
+                    }
+                }
+            });
+        },
+        _filterFiles: function(files) {
+            var bfList = [];
+            var showHiddenFiles = window["CBA_SHOW_HIDDEN_FILES"] === true;
+            for (var i = 0; i < this.bioformats.length; i++) {
+                var bf = this.bioformats[i];
+                bfList.push(bf.value);
+            }
+
+            files.sort(function(a, b) {
+                return b.createdAt.localeCompare(a.createdAt);
+            });
+            var filesFiltered = [];
+            for (var i = 0; i < files.length; i++) {
+                var file = files[i];
+                // console.log(file.name + ' ' + file.id);
+                // console.log(file);
+
+                if (!showHiddenFiles && file.name.charAt(0) == '.') {
+                    continue
+                }
+
+                if (this.mode == 'folder') {
+                    if (file.type != 'FOLDER') {
+                        continue;
+                    } else if (file.job != null) {
+                        continue;
+                    }
+                } else if (this.mode == 'file' && bfList.length > 0) {
+                    if (file.type == 'FILE' && bfList.indexOf(file.bioformat) == -1) {
+                        continue;
+                    }
+                }
+
+                filesFiltered.push(file);
+            }
+            return filesFiltered;
+        },
+        _checkCustomButtons: function() {
+            var els = this.$.botbar.querySelectorAll('.custom-button');
+            for (var i = 0; i < els.length; i++) {
+                var el = els[i];
+                var found = false;
+                var exts = el.getAttribute('file-ext').split(',');
+                for (var j = 0; j < exts.length; j++) {
+                    var ext = exts[j];
+                    if (this.selectedFile != null && elm.utils.endsWithIgnoreCase(this.selectedFile.name, ext)) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (found) {
+                    el.removeAttribute('hidden');
+                } else {
+                    el.setAttribute('hidden', '');
+                }
+            }
+        },
+        handleSearchByType: function(e) {
+            var typeClicked = e.currentTarget.dataset.value;
+            if (typeClicked == 'all') {
+                this.set('searchByType', ['all']);
+            } else {
+                var aux = [];
+                for (var i = 0; i < this.searchByType.length; i++) {
+                    var it = this.searchByType[i];
+                    if (it != 'all') {
+                        aux.push(it);
+                    }
+                }
+                var idx = aux.indexOf(typeClicked);
+                if (idx == -1) {
+                    aux.push(typeClicked);
+                } else {
+                    aux.splice(idx, 1);
+                }
+                this.set('searchByType', aux);
+            }
+        },
+        computeSearchByType: function(type, value) {
+            var idx = this.searchByType.indexOf(value);
+            if (idx == -1) {
+                return false;
+            } else {
+                return true;
+            }
+        },
+        computeSize: function(userData, size) {
+            return elm.utils.humanFileSize(size);
+        },
+        computeSizeClass: function(userData) {
+            if (!userData) {
+                return;
+            }
+            var ratio = userData.diskUsage / userData.diskQuota;
+
+            if (ratio >= 0.5 && ratio < 0.75) {
+                return "quota-0.75";
+            } else if (ratio >= 0.5 && ratio < 0.9) {
+                return "quota-0.9";
+            } else if (ratio >= 0.9) {
+                return "quota-1";
+            } else {
+                return "";
+            }
+
+        }
+    });
+</script>

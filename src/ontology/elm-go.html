@@ -1,0 +1,317 @@
+<link rel="import" href="elm-ontology-tree.html">
+<link rel="import" href="elm-ontology-tree-item.html">
+<dom-module id="elm-go">
+    <style is="custom-style" include="iron-flex iron-flex-reverse iron-flex-alignment iron-flex-factors iron-positioning">
+        :host {
+            display: block;
+            position: relative;
+            min-width: 700px;
+            max-height: 500px;
+            padding: 10px;
+        }
+
+        .but {
+            color: #445D76;
+            text-align: center;
+            height: 20px;
+            width: 115px;
+            line-height: 20px;
+            margin-top: 5px;
+        }
+
+        #goList {
+            margin: 5px;
+            height: 80%;
+            width: 95%;
+        }
+
+        #allGO,
+        #selectedGO {
+            width: 95%;
+            min-height: 345px;
+            height: calc(100vh - 450px);
+            border: 1px solid #d3d3d3;
+        }
+
+        .allGO {
+            width: 50%;
+            margin-right: 10px;
+        }
+
+        .selectedGO {
+            width: 50%;
+            margin-left: 10px;
+        }
+
+        .titlePreview {
+            color: #445D76;
+            margin-bottom: 5px;
+            border-bottom: 1px solid #445D76;
+        }
+
+        elm-table {
+            font-size: 12px;
+        }
+
+        .legend {
+            border: 1px solid #d3d3d3;
+            padding: 5px;
+        }
+
+        .legend div {
+            margin-right: 40px;
+        }
+
+        .legend i {
+            font-size: 15px;
+        }
+
+        .add-but {
+            font-size: 13px;
+            background-color: #ed9c33 !important;
+            color: #FFFFFF !important;
+            text-align: center;
+            height: 30px;
+            width: 150px;
+            line-height: 30px;
+            margin-top: 10px;
+        }
+
+        .treeGO {
+            overflow-y: auto;
+            min-height: 350px;
+            height: calc(100vh - 450px);
+            width: 80%;
+            margin: 10px;
+            padding: 5px;
+        }
+    </style>
+    <template>
+        <div class="horizontal layout" style="margin-bottom:5px">
+            <div class="elm-btn elm-btn-shdw but" on-click="handleView" data-value="go" data-checked$="{{computeView(view, 'go')}}"> <i class="fa fa-list"></i>&nbsp; Select GO </div>
+            <div class="elm-btn elm-btn-shdw but" on-click="handleView" data-value="hierarchy" data-checked$="{{computeView(view, 'hierarchy')}}"> <i class="fa fa-eye"></i>&nbsp; View Hierarchy </div>
+        </div>
+        <div id="goList" hidden$="{{!computeView(view, 'go')}}">
+            <div class="horizontal layout">
+                <div class="allGO">
+                    <elm-table id="allGO" class="flex" columns="{{goColumns}}" request="{{request}}" enable-remote enable-select enable-filter enable-paging hide-column-selector page-size="15"></elm-table>
+                    <div class="elm-btn elm-btn-shdw but" on-click="handleAddGO"><i class="fa fa-plus-square-o"></i>&nbsp; Add
+                    </div>
+                </div>
+                <div class="selectedGO">
+                    <elm-table id="selectedGO" class="flex" columns="{{goSelectedColumns}}" data="{{selectedGO}}" enable-paging hide-column-selector on-removerow="handleRemoveElement">
+                    </elm-table>
+                    <div class="elm-btn elm-btn-shdw but" on-click="handleClearSelected">
+                        Clear
+                    </div>
+                </div>
+            </div>
+            <div class="horizontal layout flex" style="width: 100%">
+                <div class="flex">
+                </div>
+                <div class="elm-btn elm-btn-shdw add-but" on-click="handleAddSelected"> Add Selected GO
+                </div>
+            </div>
+        </div>
+        <div hidden$="{{!computeView(view, 'hierarchy')}}" style="width: 95%">
+            <div class="treeGO">
+                <elm-ontology-tree id="treeGO">
+                </elm-ontology-tree>
+            </div>
+            <div class="horizontal layout flex" style="width: 100%">
+                <div class="flex">
+                </div>
+                <div class="elm-btn elm-btn-shdw add-but" on-click="handleAddSelected"> Add Selected GO
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <script>
+        Polymer({
+            is: "elm-go",
+            properties: {
+                view: {
+                    type: String,
+                    value: 'go'
+                },
+                selectedGO: {
+                    type: Array,
+                    value: function() {
+                        return [];
+                    }
+                },
+                url: {
+                    type: String,
+                    value: "",
+                    observer: 'urlChanged'
+                },
+                goValue: {
+                    type: Array,
+                    notify: true,
+                    value: function() {
+                        return [];
+                    }
+                },
+                mapSelectedGo: {
+                    type: Object,
+                    value: function() {
+                        return {};
+                    }
+                },
+                request: {
+                    type: Object
+                },
+                numTotalResults: {
+                    type: Number,
+                    notify: true
+                },
+            },
+            ready: function() {
+                var me = this;
+                this.getGO();
+                this.getFirstGo();
+
+                this.goColumns = [{
+                    name: 'id',
+                    title: 'ID',
+                    type: 'text',
+                    width: 120
+                }, {
+                    name: 'name',
+                    title: 'Name',
+                    type: 'text',
+                    width: 280
+                }];
+                this.goSelectedColumns = [{
+                    name: 'id',
+                    title: 'ID',
+                    type: 'text',
+                    width: 120
+                }, {
+                    name: 'name',
+                    title: 'Name',
+                    type: 'text',
+                    width: 230
+                }, {
+                    name: '',
+                    title: '',
+                    type: 'action',
+                    width: 50
+                }];
+            },
+            handleView: function(e) {
+                this.view = e.target.dataset.value;
+            },
+            computeView: function(view, value) {
+                return view === value;
+            },
+            handleAddGO: function(e) {
+                for (var i = 0; i < this.$.allGO.selected.length; i++) {
+                    var go = this.$.allGO.selected[i];
+                    if (this.mapSelectedGo[go.id] == null) {
+                        this.mapSelectedGo[go.id] = go;
+                        this.push('selectedGO', go);
+                    }
+                }
+            },
+            handleClearSelected: function(e) {
+                this.selectedGO = [];
+                this.mapSelectedGo = {};
+            },
+            handleAddSelected: function(e) {
+                var gos = [];
+                this.goValue = [];
+                var els = this.$.treeGO.querySelectorAll('elm-ontology-tree-item[selected]');
+                if (els.length > 0) {
+                    for (var i = 0; i < els.length; i++) {
+                        if (this.mapSelectedGo[els[i].file.id] == null) {
+                            this.mapSelectedGo[els[i].file.id] = els[i].file;
+                            gos.push(els[i].file);
+                        }
+                    }
+                    this.set('goValue', gos);
+                } else {
+                    this.set('goValue', this.selectedGO);
+                }
+                this.fire('added');
+            },
+            handleRemoveElement: function(e) {
+                var key = e.detail.row.id;
+                this.mapSelectedGo[key] = null;
+            },
+            getGO: function() {
+                var me = this;
+                var url = BiodbManager.go.fetch({
+                    request: {
+                        url: true
+                    }
+                });
+                this.url = url;
+                console.log(url);
+            },
+
+            urlChanged: function(neo, old) {
+                var me = this;
+                if (neo == null || neo == "") {
+                    return;
+                }
+                this.request = {
+                    url: this.url,
+                    parse: function(response) {
+                        return me._parse(response);
+                    },
+                    parseTotal: function(response) {
+                        var total = me._parseTotal(response);
+
+                        me.set('numTotalResults', total);
+                        return total;
+                    },
+                };
+            },
+            _parse: function(response) {
+                var me = this;
+                if (response.result != null) {
+                    data = response.result;
+                } else {
+                    data = [];
+                }
+                return data;
+            },
+            _parseTotal: function(response) {
+                var total = 0;
+                if (response.result != null) {
+                    total = response.numTotalResults;
+                }
+                return total;
+            },
+            getFirstGo: function() {
+                var me = this;
+                if (localStorage.bioinfo_biertool_go) {
+                    //Coger el arbol del local storage
+                    this.$.treeHPO.tree = treeJSON.parse(localStorage.bioinfo_biertool_go);
+                } else {
+                    //Llamar al WS
+                    BiodbManager.go.info({
+                        query: {
+                            id: "GO:0008150,GO:0003674,GO:0016043"
+                        },
+                        request: {
+                            success: function(response) {
+                                if (response.error === '' || response.error.msg == "") {
+                                    me.$.treeGO.tree = response.result;
+                                    // localStorage.bioinfo_team_diseases = JSON.stringify(response.result);
+                                } else {
+                                    console.log(response.error.msg);
+                                }
+                            },
+                            error: function() {
+                                console.log('Server error, try again later.');
+                            }
+                        }
+                    });
+                }
+            }
+        })
+    </script>
+</dom-module>

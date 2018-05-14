@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script src="../../../webcomponentsjs/webcomponents-lite.js"></script>
+    <link rel="import" href="../elm-dialog.html">
+    <style is="custom-style">
+    </style>
+</head>
+<body>
+    <button id="confirmBtn">Confirm demo</button>
+    <button id="alertBtn">Alert demo</button>
+    <button id="promptBtn">Prompt demo</button>
+    <button id="alertBtnNoCb">Alert demo without cb</button>
+
+    <h2>User response:</h2>
+    <div id="userResponse"></div>
+
+    <elm-dialog id="confirm"></elm-dialog>
+    <script>
+
+        var el = document.querySelector("#confirm");
+        var b = document.querySelector("#confirmBtn");
+        b.addEventListener("click", function handler(response){
+            var element = document.getElementById("confirm");
+            element.confirm("Confirm dialog demo",function(response){
+                if(response){
+                    testResponse("The user has confirmed!");
+                }else{
+                    testResponse("The user has canceled");
+                }
+            });
+        });
+
+        var alertBtn = document.querySelector("#alertBtn");
+        alertBtn.addEventListener("click", function handler(){
+            var element = document.getElementById("confirm");
+            element.alert("Alert dialog demo", function(){
+                testResponse("The user has read the alert");
+            }); //function to launch the alert dialog
+        });
+
+        var promptBtn = document.querySelector("#promptBtn");
+        promptBtn.addEventListener("click", function(){
+            var element = document.getElementById("confirm");
+            element.prompt("Prompt dialog demo", function(response, msg){
+                if(response){
+                    promptResponse(msg);
+                }else {
+                    testResponse("The user canceled the prompt")
+                }
+            }); //function to launch the prompt dialog
+        });
+
+        var alertBtnNoCb = document.querySelector("#alertBtnNoCb");
+        alertBtnNoCb.addEventListener("click", function(){
+            el.alert("This is an alert without callback");
+        })
+
+
+        function testResponse(msg){
+            var el = document.querySelector("#userResponse");
+            el.innerHTML = msg;
+        }
+
+        function promptResponse(msg){
+            var el = document.querySelector("#userResponse");
+            el.innerHTML = "The user has introduced: " + msg;
+        }
+    </script>
+</body>
+</html>

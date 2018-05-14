@@ -1,0 +1,175 @@
+<link rel="import" href="../../polymer/polymer.html">
+<link rel="import" href="../../iron-flex-layout/iron-flex-layout-classes.html">
+<dom-module id="elm-select-box">
+    <style is="custom-style" include="iron-flex iron-flex-reverse iron-flex-alignment iron-flex-factors iron-positioning">
+         :host {
+            display: block;
+            position: relative;
+            box-sizing: border-box;
+            border: 1px solid var(--divider-color);
+            background-color: #FFF;
+        }
+
+        #box {
+            position: relative;
+            overflow-y: auto;
+            height: 100%;
+        }
+
+         :host[enable-filter] #box {
+             height: calc(100% - 22px);
+        }
+
+        .item {
+            padding: 2px 5px;
+            cursor: pointer;
+        }
+
+        .item:hover {
+            background-color: var(--hover-color);
+        }
+
+        .item[data-checked] {
+            background-color: var(--selected-color);
+        }
+
+        #input {
+            display: block;
+            width: 100%;
+            height: 22px;
+            padding-left: 25px;
+            padding-right: 25px;
+            border-width: 0 0 1px 0;
+        }
+
+        #icon {
+            color: var(--secondary-text-color);
+            position: absolute;
+            top: 0;
+            left: 0;
+            margin-top: 3px;
+        }
+    </style>
+    <template>
+        <input hidden$="{{!enableFilter}}" id="input" class="elm" type="text" placeholder="{{placeholder}}" value="{{filterString::input}}">
+        <div hidden$="{{!enableFilter}}" id="icon" class="horizontal layout center">
+            <i style="margin-left:7px;" class="fa fa-search"></i>
+        </div>
+        <div id="box">
+            <template is="dom-repeat" items="{{options}}" as="option" filter="{{computeFilter(filterString)}}">
+                <div class="item flex" data-checked$="{{isSelected(selected, option)}}" on-mousedown="handleSelect">
+                    <span>{{computeOptionDisplay(option)}}</span>
+                </div>
+            </template>
+        </div>
+    </template>
+    <script>
+        Polymer({
+            is: 'elm-select-box',
+            properties: {
+                options: {
+                    type: Array,
+                    value: function() {
+                        return []
+                    },
+                    observer: 'optionsChanged'
+                },
+                selected: {
+                    type: Object
+                },
+                disableSelection: {
+                    type: Boolean,
+                    reflectToAttribute: true,
+                    value: false
+                },
+                selectFirst: {
+                    type: Boolean,
+                    reflectToAttribute: true,
+                    value: true
+                },
+                nameAttribute: {
+                    type: String,
+                    value: 'name'
+                },
+                titleAttribute: {
+                    type: String,
+                    value: 'title'
+                },
+                enableFilter: {
+                    type: Boolean,
+                    reflectToAttribute: true,
+                    value: false
+                },
+                placeholder: {
+                    type: String,
+                    value: 'Filter...'
+                },
+                filterString: {
+                    type: String
+                }
+            },
+            computeOptionDisplay: function(option) {
+                return option[this.titleAttribute];
+            },
+            optionsChanged: function() {
+                if (this.selected != null && this.selected.name) {
+                    this.selectByName(this.selected.name);
+                } else {
+                    this.selectByIndex(0);
+                }
+            },
+            handleSelect: function(e) {
+                if (this.disableSelection == false) {
+                    this.set('selected', e.model.option);
+                    this.fire('select', this.selected);
+                }
+            },
+            isSelected: function(selected, current) {
+                if(selected == current){
+                    return true
+                }
+                return false;
+            },
+            selectByIndex: function(index) {
+                if (this.disableSelection == false) {
+                    if (this.options[index] != null) {
+                        this.set('selected', this.options[index]);
+                        this.fire('select', this.selected);
+                    }
+                }
+            },
+            selectByName: function(name) {
+                var index = -1;
+                for (var i = 0; i < this.options.length; i++) {
+                    var option = this.options[i];
+                    if (option[this.nameAttribute] == name) {
+                        index = i;
+                        break;
+                    }
+                }
+                if (index > -1) {
+                    this.selectByIndex(index);
+                }
+            },
+            computeFilter: function(string) {
+                var me = this;
+                if (!string || string == '') {
+                    return null;
+                } else {
+                    string = string.toLowerCase();
+                    return function(item) {
+                        var title = '',
+                            name = ''
+                        if (item[me.titleAttribute] != null) {
+                            title = item[me.titleAttribute].toLowerCase();
+                        }
+                        if (item[me.nameAttribute] != null) {
+                            name = item[me.nameAttribute].toLowerCase();
+                        }
+                        return (title.indexOf(string) != -1 || name.indexOf(string) != -1);
+                    };
+                }
+            }
+        });
+    </script>
+</dom-module>

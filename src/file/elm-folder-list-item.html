@@ -1,0 +1,205 @@
+<link rel="import" href="../../../polymer/polymer.html">
+<link rel="import" href="../../../iron-flex-layout/iron-flex-layout-classes.html">
+<dom-module id="elm-folder-list-item">
+    <style is="custom-style" include="iron-flex iron-flex-reverse iron-flex-alignment iron-flex-factors iron-positioning">
+         :host {
+            position: relative;
+            display: block;
+            box-sizing: border-box;
+        }
+
+         :host:hover {
+            background-color: #ddd;
+        }
+
+         :host[selected] {
+            background-color: #ccc;
+        }
+
+        .col {
+            /*text-align: center;*/
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .filename {
+            width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .icon {
+            padding: 0 5px 0 2px;
+        }
+
+        #status {
+            color: #444;
+            width: 80px;
+            text-transform: capitalize;
+            text-align: center;
+        }
+
+        .fa-cog {
+            color: var(--default-primary-color);
+        }
+
+        .huge-icon {
+            font-size: 30px;
+            font-weight: lighter !important;
+            margin: 2px;
+            padding: 10px;
+            height: 25px;
+        }
+
+        .icon-mode-elem {
+            padding: 0 5px 0 2px;
+            width: 60px;
+            text-align: center;
+        }
+    </style>
+    <template>
+        <template is="dom-if" if="{{computeViewMode(viewMode, 'list')}}">
+            <div id="list" class="horizontal layout">
+                <div hidden="{{computeFileColumn(hideFileColumn,file)}}" id="name" class="horizontal layout" style$="width:calc(100% - {{computeFileWidth(file,colSumW)}}px);">
+                    <div class="icon"><i class$="{{computeIcon(file)}}"></i></div>
+                    <template is="dom-if" if="{{hasJob(file)}}">
+                        <div class="icon"><i class$="{{computeJobIcon(file.job)}}"></i></div>
+                    </template>
+                    <div class="filename" title$="{{file.name}}">{{file.name}}</div>
+                </div>
+                <template is="dom-repeat" items="{{columns}}" as="column">
+                    <div class="icon"><i class$="{{computeColumnIcon(column, file, columns)}}"></i></div>
+                    <div style$="width:{{column.width}}px;" class="col" title="{{computeColumn(column,file, columns)}}">{{computeColumn(column,file, columns)}}</div>
+                </template>
+            </div>
+        </template>
+        <template is="dom-if" if="{{computeViewMode(viewMode, 'icon')}}">
+            <div class="vertical layout flex icon-mode-elem" title$="{{file.name}}">
+                <div class="icon huge-icon"><i class$="{{computeIcon(file)}}"></i></div>
+                <div class="filename">{{file.name}}</div>
+            </div>
+        </template>
+    </template>
+</dom-module>
+<script>
+    Polymer({
+        is: "elm-folder-list-item",
+        properties: {
+            file: {
+                type: Object,
+                notify: true
+            },
+            viewMode: {
+                type: String,
+                value: 'list',
+                reflectToAttribute: true
+            },
+            columns: {
+                type: Array,
+                observer: 'columnsChanged'
+            },
+            hideFileColumn: {
+                type: Boolean,
+                value: false,
+                reflectToAttribute: true
+            },
+            colSumW: {
+                type: Number,
+                value: 0
+            }
+        },
+        columnsChanged: function(columns) {
+            if (columns) {
+                var w = 0;
+                for (var i = 0; i < columns.length; i++) {
+                    var c = columns[i];
+                    if (!isNaN(c.width)) {
+                        w += c.width;
+                    }
+                }
+                this.colSumW = w;
+            }
+        },
+        computeIcon: function(file) {
+            var icon
+            if (file.job != null) {
+                return 'fa fa-flask';
+            }
+            var iconMap = {
+                "FOLDER": 'fa fa-folder',
+                "FILE": 'fa fa-file-o'
+            };
+            icon = iconMap[file.type];
+
+            if (file.format.indexOf("image") >= 0) {
+                icon = 'fa fa-file-image-o';
+            } else if (file.format == "text/plain" || file.format == "application/octet-stream") {
+                icon = 'fa fa-file-text-o';
+            } else if (file.format == "application/xml" || file.format == "application/x-sh") {
+                icon = 'fa fa-file-code-o';
+            }
+            if (window.BIOFORMATS != null && window.BIOFORMATS[file.bioformat] != null && window.BIOFORMATS[file.bioformat].icon != null) {
+                icon = "fa fa-" + window.BIOFORMATS[file.bioformat].icon
+            }
+
+            return icon;
+        },
+        computeJobIcon: function(job) {
+            if (job) {
+                if (job.status.indexOf('ERROR') != -1) {
+                    return 'fa fa-times';
+                }
+                var iconMap = {
+                    "QUEUED": 'fa fa-clock-o',
+                    "RUNNING": 'fa fa-circle-o-notch fa-spin',
+                    "DONE": 'fa fa-check',
+                };
+                return iconMap[job.status];
+            }
+        },
+        computeViewMode: function(viewMode, value) {
+            return viewMode == value;
+        },
+        hasJob: function(file) {
+            return file.job != null;
+        },
+        computeColumn: function(column, file) {
+            if (column.formula == null) {
+                return file[column.name];
+            } else {
+                return column.formula(file);
+            }
+        },
+        computeFileColumn: function(hideFileColumn, file) {
+            // if (file.type == 'FOLDER') {
+            //     return false;
+            // } else {
+            return hideFileColumn;
+            // }
+        },
+        computeFileWidth: function(file, colSumW) {
+            if (file.type == 'FOLDER') {
+                return 0;
+            } else {
+                return colSumW;
+            }
+        },
+        computeColumnIcon: function(column, file) {
+            if (column.icon != null) {
+                if (file.type == 'FOLDER') {
+                    if (file.job != null) {
+                        return 'fa fa-flask';
+                    } else {
+                        return 'fa fa-folder';
+                    }
+                } else {
+                    return 'fa ' + column.icon;
+                }
+            } else {
+                return '';
+            }
+        }
+    });
+</script>

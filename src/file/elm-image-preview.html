@@ -1,0 +1,92 @@
+<link rel="import" href="../../../polymer/polymer.html">
+<link rel="import" href="../../../iron-flex-layout/iron-flex-layout-classes.html">
+
+<dom-module id="elm-image-preview">
+    <style is="custom-style" include="iron-flex iron-flex-reverse iron-flex-alignment iron-flex-factors iron-positioning">
+     :host {
+            display: block;
+            position: relative;
+            box-sizing: border-box;
+            overflow-y: auto;
+            overflow-x: auto;
+            /*min-width: 800px;*/
+            /*min-height: 600px;*/
+            height: calc(100vh - 100px);
+            padding: 10px;
+        }
+
+        img {
+            position: relative;
+            margin: 0;
+            /*top: 50%;*/
+            /*left: 50%;*/
+            /*margin-right: -50%;*/
+            /*transform: translate(-50%, -50%);*/
+            justify-content: center;
+        }
+
+        .botbar {
+            height: 50px;
+            width: 100%;
+        }
+
+        .download {
+            width: 100px;
+        }
+    }
+    </style>
+    <template>
+        <div class="horizontal layout center-justified botbar">
+            <div class="download elm-btn elm-btn-shdw" on-click="handleDownloadFile">Download <i class="fa fa-download"></i></div>
+        </div>
+
+        <img src="{{imageURL}}" alt="" width="800">
+        <br>
+    </template>
+</dom-module>
+<script>
+    Polymer({
+        is: "elm-image-preview",
+        properties: {
+            fileId: {
+                type: String,
+                observer: 'fileIdChanged'
+            },
+            imageURL: {
+                type: String,
+                value: ""
+            }
+        },
+        ready: function() {
+            var me = this;
+            if (this._parentPanel) {
+                this._parentPanel.addEventListener('close', function(e) {
+                    me._clear();
+                });
+            }
+        },
+        loadPage: function() {
+            this.imageURL = CbaManager.getFileURL(this.fileId);
+        },
+        fileIdChanged: function(neo, old) {
+            if (neo != null) {
+                this.loadPage();
+            }
+        },
+        _clear: function() {
+            this.contentData = "";
+            this._start = 0;
+            this._limit = 100;
+            this._end = false;
+            this.scrollTop = 0;
+            this.fileId = null;
+            this.imageURL = "";
+
+        },
+        handleDownloadFile: function() {
+            if (this.fileId != null) {
+                CbaManager.downloadFile(this.fileId);
+            }
+        }
+    });
+</script>

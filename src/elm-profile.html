@@ -1,0 +1,176 @@
+<link rel="import" href="../../polymer/polymer.html">
+<dom-module id="elm-profile">
+    <style is="custom-style" include="iron-flex iron-flex-reverse iron-flex-alignment iron-flex-factors iron-positioning">
+         :host {
+            display: block;
+            position: absolute;
+            box-sizing: border-box;
+            padding: 30px 100px;
+            left: 0;
+            right: 0;
+            margin: 0px auto 0px auto;
+            width: 500px;
+            transition: all 0.2s;
+            box-shadow: 0px 0px 12px 6px rgba(0, 0, 0, 0.30);
+            background-color: var(--light-primary-color);
+            color: var(--primary-text-color);
+        }
+
+        .title {
+            text-align: center;
+            font-size: 25px;
+        }
+
+        .icon {
+            font-size: 50px;
+            color: var(--dark-primary-color);
+        }
+
+        .message {
+            margin: 20px 0 0 0;
+            box-shadow: 0px 0px 2px 1px rgba(0, 0, 0, 0.3);
+        }
+
+        #button {
+            font-weight: normal;
+            height: auto;
+            padding: 10px 15px;
+            font-size: 16px;
+            border-radius: 3px;
+            color: var(--text-primary-color);
+            background-color: var(--dark-button-color);
+        }
+
+        #button:hover {
+            background-color: var(--light-button-color);
+        }
+
+        #formEmail {
+            margin-top: 40px;
+        }
+    </style>
+    <template>
+        <div class="title">
+            <div>
+                Password
+            </div>
+            <div class="icon">
+                <i class="fa fa-user"></i>
+            </div>
+        </div>
+        <form id="formPassword">
+            <label class="elm">Old password:</label>
+            <input class="elm" type="password" value="{{oldpassword::input}}" required pattern="[a-zA-Z0-9]+">
+            <br>
+            <label class="elm">New password:</label>
+            <input class="elm" type="password" value="{{password::input}}" required pattern="[a-zA-Z0-9]+">
+            <label class="elm">Check password:</label>
+            <input class="elm" type="password" value="{{passwordCheck::input}}" required pattern="[a-zA-Z0-9]+">
+            <br>
+            <br>
+
+            <div id="button" class="elm-btn elm-btn-shdw" on-click="handleChangePasswordForm">Change password</div>
+        </form>
+        <br>
+        <div hidden$="{{!message}}" class="message elm-note elm-note-warn">&nbsp;{{message}}</div>
+        <!-- <form id="formEmail">
+            <label class="elm">New e-mail</label>
+            <input class="elm" type="email" value="{{email::input}}" required>
+            <br>
+
+            <div class="elm-btn elm-btn-shdw" on-click="handleChangeEmailForm">Change e-mail</div>
+        </form> -->
+
+
+    </template>
+    <script>
+        Polymer({
+            is: "elm-profile",
+            properties: {
+                email: {
+                    type: String,
+                    value: ''
+                },
+                oldpassword: {
+                    type: String,
+                    value: ''
+                },
+                password: {
+                    type: String,
+                    value: ''
+                },
+                passwordCheck: {
+                    type: String,
+                    value: ''
+                },
+                message: {
+                    type: String,
+                    value: ''
+                }
+            },
+            clean: function() {
+                this.set('oldpassword', '');
+                this.set('password', '');
+                this.set('passwordCheck', '');
+                this.set('message', '');
+            },
+            handleChangePasswordForm: function(e) {
+                var me = this;
+                this.message = '';
+
+                if (this.$.formPassword.checkValidity()) {
+                    if (this.password === this.passwordCheck) {
+                        CbaManager.users.updatePassword({
+                            id: Cookies('bioinfo_user'),
+                            request: {
+                                headers: {
+                                    'x-elm-1': CryptoJS.SHA1(this.oldpassword).toString(),
+                                    'x-elm-2': CryptoJS.SHA1(this.password).toString()
+                                },
+                                success: function(response) {
+                                    if (response.response[0].error == null) {
+                                        me.message = 'Password updated';
+                                    } else {
+                                        me.message = response.response[0].error;
+                                    }
+                                },
+                                error: function() {
+                                    me.message = 'Server error, try again later.';
+                                }
+                            }
+                        });
+                    } else {
+                        this.set('message', 'Sorry, your new password does not match.');
+                    }
+                } else {
+                    this.set('message', 'Please, you should fill all the fields.');
+                }
+            },
+            handleChangeEmailForm: function(e) {
+                var me = this;
+                this.message = '';
+
+                if (this.$.formEmail.checkValidity()) {
+                    CbaManager.users.updateEmail({
+                        id: Cookies('bioinfo_user'),
+                        query: {
+                            nemail: this.email
+                        },
+                        request: {
+                            success: function(response) {
+                                if (response.response[0].error == null) {
+                                    me.message = 'E-mail updated';
+                                } else {
+                                    me.message = response.response[0].error;
+                                }
+                            },
+                            error: function() {
+                                me.message = 'Server error, try again later.';
+                            }
+                        }
+                    });
+                }
+            }
+        });
+    </script>
+</dom-module>

@@ -1,0 +1,329 @@
+<link rel="import" href="../../../polymer/polymer.html">
+<link rel="import" href="../../../iron-flex-layout/iron-flex-layout-classes.html">
+
+<link rel="import" href="../elm-dialog/elm-dialog.html">
+
+<dom-module id="elm-job-item">
+    <style is="custom-style" include="iron-flex iron-flex-reverse iron-flex-alignment iron-flex-factors iron-positioning">
+         :host {
+            display: block;
+            position: relative;
+            box-sizing: border-box;
+        }
+
+         :host(:hover) {
+            background-color: var(--hover-color);
+        }
+
+         :host[selected] {
+            background-color: var(--selected-color);
+        }
+
+        .capitalize {
+            text-transform: capitalize;
+        }
+
+        .ERROR,
+        .EXEC_ERROR,
+        .QUEUE_ERROR,
+        .QUEUE_WAITING_ERROR {
+            color: #b30000;
+        }
+
+        .QUEUED {
+            color: #ff8c00;
+        }
+
+        .RUNNING {
+            color: #298c63;
+        }
+
+        .DONE {
+            color: #0068cc;
+        }
+
+        .date {
+            color: var(--secondary-text-color);
+            font-size: 0.9em;
+        }
+
+        .bar>* {
+            margin: 1px;
+            color: #666;
+        }
+
+        .bar>*:hover {
+            color: #000;
+            cursor: pointer;
+        }
+
+        .log-file {
+            color: #ad2a2a !important;
+        }
+
+        .log-file:hover {
+            color: #b30000 !important;
+        }
+
+        .delete-job:hover {
+            color: #b30000 !important;
+        }
+
+        .relaunch-job:hover {
+            color: #298c63 !important;
+        }
+
+        .info-job:hover {
+            color: #0068cc !important;
+        }
+
+        .download-job:hover {
+            color: #0068cc !important;
+        }
+
+        .open-job-folder:hover {
+            color: #0068cc !important;
+        }
+
+        .download {
+            color: #000 !important;
+        }
+
+        .data {
+            color: var(--secondary-text-color);
+        }
+
+        #filePreviewPanel .container {
+            width: 800px;
+            height: 600px;
+            padding: 10px;
+            overflow-y: auto;
+            overflow-x: auto;
+        }
+
+        .fa-spin-elem {
+            color: red !important;
+        }
+    </style>
+    <template>
+        <div id="content">
+            <div id="job">
+                <div>
+                    <i class$="{{computeStatusIcon(job)}}"></i>
+                    <span style="white-space: nowrap">{{job.name}}</span>
+                </div>
+                <div class="horizontal layout center">
+                    <div style="padding-right:5px;" class="capitalize">{{computeToolName(job)}}</div>
+                    <div style="padding-right:5px;" class$="{{computeStatusClass(job)}}">{{computeStatus(job)}}</div>
+                    <div style="padding-right:5px;" class="date flex">{{computeDate(job)}}</div>
+                    <div class="bar" id="bar">
+                        <!-- <template is="dom-if" if="{{!isRunning(job)}}"> -->
+                        <template is="dom-if" if="{{showLogFile(job)}}">
+                            <i class="fa fa-file-o log-file" title="View log file" on-click="handleViewLogFile"></i>
+                            <!-- <span style="margin-right:5px;"></span> -->
+                        </template>
+                        <i class="fa fa-trash-o delete-job" title="Delete Job" on-click="handleDeleteJob"></i>
+                        <!-- <i class="fa fa-trash-o delete-job" title="Delete Job" on-click="handleDeleteJob" hidden$={{computeDeleteJobIcon(job)}}></i> -->
+                        <i class="fa fa-refresh relaunch-job" title="Relaunch Job" on-click="handleRelaunchJob" hidden$="{{hideRelaunch(job)}}"></i>
+                        <!-- <i class="fa fa-info info-job" title="Job information" on-click="handleJobInformation"></i> -->
+                        <i class="fa fa-download download-job" title="Download" on-click="handleDownloadJob" hidden$="{{computeDownloadJobIcon(job)}}"></i>
+                        <i class="fa fa-folder-open-o open-job-folder" title$="Open job folder: {{job.folder.path}}" on-click="handleOpenJobFolder" hidden$="{{computeOpenJobIcon(job)}}"></i>
+                        <i class="fa fa-bug bug-job" title="Report Error" hidden$="{{!hasError(job)}}" on-click="handleReportError"></i>
+                        <!-- </template> -->
+                    </div>
+                </div>
+            </div>
+            <!-- <div id="fileInfo" class="vertical layout flex" hidden="{{!showInfo}}">
+                <div class="horizontal layout">
+                    <span class="data">Description:&nbsp;</span>
+                    <span class="value">{{job.description}}</span>
+                </div>
+            </div> -->
+            <elm-panel modal fixed closable hidden id="filePreviewPanel">
+                <div class="header">
+                    <i class="fa fa-eye"></i> File Preview
+                </div>
+                <elm-file-preview class="container" id="filePreview"></elm-file-preview>
+            </elm-panel>
+        </div>
+    </template>
+    <script>
+        Polymer({
+            is: "elm-job-item",
+            properties: {
+                job: {
+                    type: Object,
+                    notify: true,
+                },
+                showInfo: {
+                    type: Boolean,
+                    value: false
+                },
+                contentData: {
+                    type: String,
+                    value: "",
+                },
+                disableRelaunch: {
+                    type: Boolean,
+                    reflectToAttribute: true,
+                    value: false
+                }
+            },
+            created: function() {},
+            computeDate: function(job) {
+                var date = new Date(Date.parse(job.createdAt));
+                return date.toLocaleString();
+            },
+            computeStatusIcon: function(job) {
+                var iconMap = {
+                    "EXEC_ERROR": 'ERROR fa fa-times',
+                    "QUEUE_ERROR": 'ERROR fa fa-times',
+                    "QUEUE_WAITING_ERROR": 'ERROR fa fa-times',
+                    "ERROR": 'ERROR fa fa-times',
+                    "QUEUED": 'QUEUED fa fa-clock-o',
+                    "RUNNING": 'RUNNING fa fa-circle-o-notch fa-spin',
+                    "DONE": 'DONE fa fa-check'
+                };
+                return iconMap[job.status];
+            },
+            computeStatus: function(job) {
+                return job.status.toLowerCase();
+            },
+            computeStatusClass: function(job) {
+                return "capitalize " + job.status;
+            },
+            computeToolName: function(job) {
+                if (job.execution != null && job.execution != '') {
+                    return job.execution;
+                }
+                return job.tool;
+            },
+            hideRelaunch: function(job) {
+                if(this.disableRelaunch == false){
+                    return true;
+                }
+                if ((job.status === "DONE" || job.status.indexOf("ERROR") != -1)) {
+                    return false;
+                }
+                return true;
+            },
+            isRunning: function(job) {
+                return job.status == "RUNNING";
+            },
+            computeDeleteJobIcon: function(job) {
+                return job.status != "DONE" && job.status != "RUNNING" && job.status != "";
+            },
+            computeDownloadJobIcon: function(job) {
+                if (job.status.indexOf("ERROR") != -1) {
+                    return true;
+                } else {
+                    return job.status != "DONE";
+                }
+            },
+            computeOpenJobIcon: function(job) {
+                if ((job.status === "DONE" || job.status.indexOf("ERROR") != -1)) {
+                    return false;
+                }
+                return true;
+            },
+            showLogFile: function(job) {
+                if (window.CBA_SHOW_JOB_ERROR_FILES !== true) {
+                    return false;
+                } else {
+                    return true;
+                }
+            },
+            hasError: function(job) {
+                return job.status.indexOf("ERROR") != -1;
+            },
+            handleDeleteJob: function(e) {
+                var me = this;
+                e.stopPropagation();
+                new elmDialog().confirm("Are you sure?", function(answer) {
+                    if (answer == true) {
+                        CbaManager.jobs.delete({
+                            query: {
+                                jobId: me.job._id,
+                            },
+                            request: {
+                                success: function(response) {
+                                    if (response.response[0].error == null) {
+                                        console.log('Job deleted');
+                                    } else {
+                                        console.log(response.response[0].error);
+                                    }
+                                    me.fire('need-refresh');
+                                },
+                                error: function() {
+                                    console.log('Server error, try again later.');
+                                }
+                            }
+                        });
+                    }
+                });
+            },
+            handleRelaunchJob: function(e) {
+                e.stopPropagation();
+                var me = this;
+                me.fire('job-relaunched', this.job);
+            },
+            handleViewLogFile: function(e) {
+                e.stopPropagation();
+                this.$.filePreview.fileId = this.job.olog;
+                this.$.filePreviewPanel.show();
+            },
+            handleDownloadJob: function(e) {
+                e.stopPropagation();
+                var me = this;
+                var url = CbaManager.jobs.download({
+                    id: me.job._id,
+                    query: {
+                        sid: Cookies("bioinfo_sid")
+                    },
+                    request: {
+                        url: true
+                    }
+                });
+
+                var link = document.createElement('a');
+                link.href = url;
+                var event = new MouseEvent('click', {
+                    'view': window,
+                    'bubbles': true,
+                    'cancelable': true
+                });
+                link.dispatchEvent(event);
+            },
+            handleOpenJobFolder: function(e) {
+                e.stopPropagation();
+                this.fire('open-job-folder', this.job);
+            },
+            handleReportError: function(e) {
+                e.stopPropagation();
+                var jobId = this.job._id;
+                var jobItem = e.currentTarget;
+                jobItem.classList.add("fa-spin", "fa-spin-elem");
+                CbaManager.jobs.reportError({
+                    id: jobId,
+                    request: {
+                        success: function(response) {
+                            if (response.response[0].error == null) {
+                                new elmDialog().alert(response.response[0].results[0]);
+                                jobItem.disabled = true;
+                            } else {
+                                new elmDialog().alert('Sorry! There was a problem, try again later');
+                            }
+                            jobItem.classList.remove("fa-spin");
+                            jobItem.classList.remove("fa-spin-elem");
+                        },
+                        error: function() {
+                            jobItem.classList.remove("fa-spin");
+                            jobItem.classList.remove("fa-spin-elem");
+                            console.log('Server error, try again later');
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+</dom-module>

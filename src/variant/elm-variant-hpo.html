@@ -1,0 +1,112 @@
+<link rel="import" href="../../../polymer/polymer.html">
+<dom-module id="elm-variant-hpo">
+    <style is="custom-style" include="iron-flex iron-flex-reverse iron-flex-alignment iron-flex-factors iron-positioning">
+        :host {
+            display: block;
+            position: relative;
+            width: 100%;
+        }
+
+        elm-table {
+            box-shadow: 0px 0px 2px 0px rgba(0, 0, 0, 0.2);
+            overflow-y: hidden;
+        }
+
+        elm-table::shadow #list {
+            min-height: 200px;
+        }
+
+        elm-table::shadow #list {
+            min-height: 200px;
+        }
+
+        elm-table::shadow {
+            font-size: 11px;
+        }
+
+        elm-table::shadow .table-row {
+            height: 25px;
+        }
+
+        elm-table::shadow .table-header-field > .name.elm-table {
+            padding: 4px 0;
+        }
+    </style>
+    <template>
+        <elm-table id="table" hidden$="{{isEmpty}}" on-rowclick="handleRowClick" enable-export enable-paging></elm-table>
+        <div hidden$="{{!isEmpty}}" style="padding:20px 50px;">
+            No HPO found.
+        </div>
+    </template>
+</dom-module>
+
+<script>
+    Polymer({
+        is: 'elm-variant-hpo',
+        properties: {
+            row: {
+                type: Object,
+                observer: 'rowChanged'
+            },
+            isEmpty: {
+                value: false,
+                type: Boolean
+            }
+        },
+        ready: function() {
+            this.$.table.columns = this._columns;
+        },
+        _columns: [{
+            name: "id",
+            title: "OMIM id",
+            width: 150,
+            defaultValue: '.'
+        }, {
+            name: "name",
+            title: "Name",
+            width: 300,
+            defaultValue: '.'
+        }, {
+            name: "hpo",
+            title: "HPO id",
+            width: 150,
+            defaultValue: '.'
+        }],
+
+        rowChanged: function(neo, old) {
+            var me = this;
+            this.$.table.currentPage = 1;
+            if (neo) {
+                var variant = neo.chromosome + ":" + neo.start + ":" + neo.reference + ":" + neo.alternate;
+                CellBaseManager.get({
+                    species: 'hsapiens',
+                    category: 'genomic',
+                    subCategory: 'variant',
+                    resource: 'annotation',
+                    query: variant,
+                    //                    query: "19:45411941:T:C",
+                    async: false,
+                    success: function(response) {
+                        try {
+                            me.$.table.data = me.parseFunction(response.response[0].result[0].geneTraitAssociation);
+                            me.isEmpty = (me.$.table.data.length > 0) ? false : true;
+                        } catch (e) {
+                            me.$.table.data = [];
+                            me.isEmpty = true;
+                        }
+                    }
+                });
+            }
+        },
+        parseFunction: function(data) {
+            var res = [];
+
+            for (var i = 0; i < data.length; i++) {
+                if (data[i].source == "hpo") {
+                    res.push(data[i]);
+                }
+            }
+            return res;
+        }
+    });
+</script>

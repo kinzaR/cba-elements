@@ -1,0 +1,776 @@
+<link rel="import" href="../../../polymer/polymer.html">
+<link rel="import" href="../../../iron-flex-layout/iron-flex-layout-classes.html">
+
+<link rel="import" href="../elm-dialog/elm-dialog.html">
+
+<link rel="import" href="elm-folder-create.html">
+<link rel="import" href="elm-folder-list-item.html">
+<dom-module id="elm-folder-list">
+    <style is="custom-style" include="iron-flex iron-flex-reverse iron-flex-alignment iron-flex-factors iron-positioning">
+         :host {
+            position: relative;
+            display: block;
+            box-sizing: border-box;
+        }
+
+        #header,
+        #bar {
+            box-sizing: border-box;
+            background-color: var(--light-secondary-color);
+            padding: 3px 7px 3px 7px;
+            border-bottom: 1px solid var(--divider-color);
+        }
+
+        #header {
+            height: 25px;
+        }
+
+        #bar {
+            height: 30px;
+        }
+
+        #content.list {
+            height: calc(100% - 75px);
+            overflow-y: scroll;
+            overflow-x: hidden;
+        }
+
+        .content-info-bar {
+            box-sizing: border-box;
+            height: 20px;
+            padding: 0 7px;
+            border-top: 1px solid rgba(130, 130, 130, 0.5);
+            color: var(--secondary-text-color);
+            background-color: var(--hover-color);
+        }
+
+        #content.list.info {
+            height: calc(100% - 135px);
+        }
+
+        #content.icon {
+            height: calc(100% - 30px);
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        #content.icon.info {
+            height: calc(100% - 90px);
+        }
+
+        .col {
+            color: #444;
+            text-align: center;
+        }
+
+        .status {
+            color: #444;
+            width: 95px;
+            text-align: center;
+        }
+
+        elm-folder-list-item[view-mode='list'] {
+            padding: 3px 7px;
+            border-bottom: 1px solid rgba(125, 125, 125, 0.3);
+        }
+
+        elm-folder-list-item[view-mode='list']:last-of-type {
+            border-bottom-width: 0px;
+        }
+
+        elm-folder-list-item[view-mode='icon'] {
+            margin: 1px;
+            height: 70px;
+        }
+
+        elm-folder-list-item.dragover {
+            background-color: var(--accent-color);
+            color: var(--text-primary-color);
+        }
+
+        #createfolder {
+            box-sizing: border-box;
+            width: 300px;
+            background-color: #fafafa;
+            padding: 20px 30px;
+        }
+
+        .upload-btn {
+            background-color: var(--dark-button-color) !important;
+            color: var(--text-primary-color) !important;
+        }
+
+        .bar>div {
+            margin-right: 5px;
+        }
+
+        #fileInfo {
+            box-sizing: border-box;
+            height: 60px;
+            background-color: var(--light-secondary-color);
+            border-top: 1px solid var(--divider-color);
+            padding: 5px;
+        }
+
+        .data {
+            color: var(--secondary-text-color);
+        }
+
+        .value {
+            margin-right: 10px;
+        }
+
+        .lowercase {
+            text-transform: lowercase;
+        }
+        /*.menu-option:before {
+            font-family: 'FontAwesome';
+            content: '\f0da';
+            margin-right: 5px;
+        }*/
+
+        [data-sortorder=ASC]:after {
+            font-family: 'FontAwesome';
+            content: '\f107';
+            padding-left: 5px;
+        }
+
+        [data-sortorder=DESC]:after {
+            font-family: 'FontAwesome';
+            content: '\f106';
+            padding-left: 5px;
+        }
+    </style>
+    <template>
+        <div id="bar" class="horizontal layout">
+            <div class="bar horizontal layout flex">
+                <div class="elm-btn elm-btn-shdw" hidden$="{{checkBack(folder)}}" on-click="handleBack" title="Go back">
+                    <i class="fa fa-arrow-left"></i>
+                </div>
+
+                <div class="elm-btn elm-btn-shdw upload-btn" hidden$="{{isUploadHidden(mode,hideUploadBtn)}}" on-click="handleUploadFile" title="Upload a new file">
+                    <i class="fa fa-cloud-upload"></i> Upload
+                </div>
+
+                <div class="elm-btn elm-btn-shdw" hidden$="{{checkFolder(folder)}}" on-click="handleCreateFolder" title="Create new folder">
+                    <i class="fa fa-folder"></i> +
+                </div>
+                <div class="elm-btn elm-btn-shdw" hidden$="{{computeDelete(selected)}}" on-click="handleDeleteFile" title="Remove file/folder/job">
+                    <i class="fa fa-trash"></i>
+                </div>
+                <div class="elm-btn elm-btn-shdw" hidden$="{{checkPreviewFile(selected)}}" on-click="handlePreviewFile" title="View file">
+                    <i class="fa fa-eye"></i>
+                </div>
+                <div class="elm-btn elm-btn-shdw" hidden$="{{checkSelectedFile(selected,hideDownloadBtn)}}" on-click="handleDownloadFile" title="Download file">
+                    <i class="fa fa-download"></i>
+                </div>
+                <div class="elm-btn elm-btn-shdw" hidden$="{{checkSelectedJob(selected)}}" on-click="handleViewJob" title="View job results">
+                    <i class="fa fa-gears"></i>
+                </div>
+                <!-- <div class="elm-btn elm-btn-shdw" hidden$="{{checkSelected(selected)}}" on-click="handleRename" title="Rename file">
+                    <i class="fa fa-edit"></i>
+                </div> -->
+            </div>
+            <div class="horizontal layout">
+                <div class="elm-btn elm-btn-shdw" on-click="handleViewInfo" style="margin-right: 5px;" hidden$="{{checkSelected(selected)}}" title="Show info ">
+                    <i class="fa fa-info"></i>
+                </div>
+                <div class="elm-btn elm-btn-shdw" on-click="handleViewMode" hidden$="{{disableIconView}}" title="Change icon/list view" style="margin-right: 5px;">
+                    <i class$="{{computeViewModeIconClass(viewMode)}}"></i>
+                </div>
+                <!--<div class="elm-btn elm-btn-shdw" on-click="handleIcon">-->
+                <!--<i class="fa fa-th"></i>-->
+                <!--</div>-->
+            </div>
+        </div>
+
+        <template is="dom-if" if="{{computeHeader(viewMode)}}">
+            <div id="header" class="horizontal layout center">
+                <!-- <i class="fa fa-sort" on-click="changeSort" data-sort="createdAt" title="Date sort" style="margin-right:2px;"></i> -->
+                <div hidden="{{hideFileColumn}}" class="flex" data-sortorder$="{{_sortOrder(sort,sortASC,'name')}}" data-sort="name" on-click="changeSort">Name</div>
+                <template is="dom-repeat" items="{{columns}}" as="column">
+                    <div style$="width:{{compColumTitleWidth(column)}}px;" class$="col" data-sortorder$="{{_sortOrder(sort,sortASC,column.name)}}" data-sort$="{{column.name}}" on-click="changeSort">{{column.title}}</div>
+                </template>
+            </div>
+        </template>
+        <div id="content" class$="{{computeContentClass(viewMode,showInfo)}}">
+            <div class$="{{computeClassViewMode(viewMode)}}">
+                <template rendered-item-count="{{_filteredCount}}" is="dom-repeat" items="{{files}}" filter="{{checkFilters(searchBy,searchByType)}}" sort="{{checkSort(sort,sortASC)}}">
+                    <elm-folder-list-item file="{{item}}" on-dblclick="handleFileDblClick" on-click="handleFileClick" view-mode="{{viewMode}}" columns="{{columns}}" hide-file-column="{{hideFileColumn}}" on-dragstart="handleDragStart" draggable="true" on-drop="handleDragDrop" on-dragover="handleDragOver" on-dragleave="handleDragLeave">
+                    </elm-folder-list-item>
+                </template>
+            </div>
+        </div>
+        <div class="content-info-bar horizontal layout center start-justified">
+            <span>Showing {{_filteredCount}} items of {{files.length}}</span>
+        </div>
+
+        <div id="fileInfo" class="vertical layout" hidden="{{!showInfo}}">
+            <div class="horizontal layout center">
+                <i class="fa fa-file-o" hidden="{{isFile}}"></i>
+                <i class="fa fa-folder" hidden="{{!isFile}}"></i>&nbsp;
+                <span>{{fileName}}</span>
+            </div>
+            <div class="horizontal layout center">
+                <span class="data">Type: &nbsp;</span>
+                <span class="value lowercase">{{fileType}}</span>
+                <!-- <span class="data">Format: &nbsp;</span>
+                <span class="value lowercase">{{fileFormat}}</span> -->
+                <span class="data">Bioformat: &nbsp;</span>
+                <span class="value lowercase">{{fileBioformat}}</span>
+            </div>
+            <div class="horizontal layout center">
+                <span class="data">Creation Date: &nbsp;</span>
+                <span>{{fileDate}}</span>
+            </div>
+        </div>
+
+        <elm-panel modal fixed closable hidden id="createFolderModal">
+            <div class="header"><i class="fa fa-folder"></i> &nbsp; Create folder</div>
+            <elm-folder-create class="container" id="createfolder" on-folder-created="handleFolderCreated" folder="{{folder}}">
+            </elm-folder-create>
+        </elm-panel>
+
+
+    </template>
+    <script>
+        Polymer({
+            is: "elm-folder-list",
+            properties: {
+                folder: {
+                    type: Object,
+                    notify: true,
+                    value: null
+                },
+                files: {
+                    type: Array,
+                    notify: true,
+                    value: function() {
+                        return [];
+                    }
+                },
+                selected: {
+                    type: Object,
+                    notify: true,
+                    value: function() {
+                        return null;
+                    },
+                    observer: 'selectedChanged'
+                },
+                mode: {
+                    type: String,
+                    reflectToAttribute: true,
+                },
+                viewMode: {
+                    type: String,
+                    value: 'list'
+                },
+                showInfo: {
+                    type: Boolean,
+                    value: false
+                },
+                disableIconView: {
+                    type: Boolean,
+                    value: false
+                },
+                isFile: {
+                    type: Boolean,
+                    value: false
+                },
+                searchBy: {
+                    type: String,
+                    value: ""
+                },
+                searchByType: {
+                    type: String
+                },
+                userData: {
+                    type: Object,
+                    observer: 'userDataChanged'
+                },
+                sort: {
+                    type: String,
+                    value: "createdAt"
+                },
+                sortASC: {
+                    type: Boolean,
+                    value: true
+                },
+                columns: {
+                    type: Array,
+                    value: [{
+                        title: 'Size',
+                        name: 'size',
+                        width: 80,
+                        formula: function(file) {
+                            if (file.type == "FILE") {
+                                return elm.utils.humanFileSize(file.size);
+                            } else {
+                                return ".";
+                            }
+                        }
+                    }, {
+                        title: 'Date',
+                        width: 80,
+                        name: 'createdAt',
+                        formula: function(file) {
+                            var date = new Date(Date.parse(file.createdAt));
+                            return elm.utils.months[date.getMonth()] + " " + date.getDate() + ", " + date.getFullYear();
+                        }
+                    }]
+                },
+                hideFileColumn: {
+                    type: Boolean,
+                    value: false,
+                    reflectToAttribute: true
+                },
+                hideUploadBtn: {
+                    type: Boolean,
+                    value: false,
+                    reflectToAttribute: true
+                },
+                hideDownloadBtn: {
+                    type: Boolean,
+                    value: false,
+                    reflectToAttribute: true
+                },
+                _filteredCount: {
+                    type: Number
+                }
+            },
+            created: function() {
+                this.fileBelongsToJob = {};
+            },
+            ready: function() {},
+
+            refreshFolderList: function() {
+                var aux = [];
+                for (var i = 0; i < this.columns.length; i++) {
+                    var c = this.columns[i];
+                    aux.push(c);
+                };
+                this.set('columns', aux);
+            },
+
+            handleUploadFile: function(e) {
+                this.set('selected', null);
+                this.fire('upload-file');
+            },
+            handleCreateFolder: function(e) {
+                if (this.$.createFolderModal.hasAttribute('hidden')) {
+                    this.$.createFolderModal.removeAttribute('hidden');
+                } else {
+                    this.$.createFolderModal.setAttribute('hidden', '');
+                }
+            },
+            handleFolderCreated: function(e) {
+                this.$.createFolderModal.setAttribute('hidden', '');
+            },
+            handleDeleteFile: function(e) {
+                var me = this;
+                new elmDialog().confirm("Are you sure?", function(answer) {
+                    if (answer == true) {
+                        me._deleteFile();
+
+                    }
+                });
+            },
+            selectedChanged: function(neo, old) {
+                this.fileName = "";
+                this.fileType = "";
+                this.fileBioformat = "";
+                this.fileFormat = "";
+                this.fileDate = "";
+
+                var sel = this.querySelector("elm-folder-list-item[selected]");
+                if (sel) {
+                    sel.removeAttribute('selected');
+                }
+                this.fire('fileselect', {
+                    file: this.selected
+                });
+            },
+            handleFileClick: function(e) {
+                this.selected = e.currentTarget.file;
+                e.currentTarget.setAttribute('selected', '');
+
+                this.fileName = this.selected.name;
+                this.fileType = this.selected.type;
+                if (this.fileType == "FOLDER") {
+                    this.isFile = true;
+                } else {
+                    this.isFile = false;
+                }
+                this.fileFormat = this.selected.format;
+                this.fileBioformat = this.selected.bioformat;
+
+                var date = new Date(Date.parse(this.selected.createdAt));
+                this.fileDate = date.toLocaleString("en-us", {
+                    month: "short"
+                }) + " " + date.getDate() + ", " + date.getFullYear() + " " + date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds();
+
+                this.fire('fileclick', {
+                    file: e.currentTarget.file
+                });
+            },
+            handleFileDblClick: function(e) {
+                var file = e.currentTarget.file;
+                if (file.type == 'FOLDER') {
+                    this.set('selected', null);
+                }
+                this.fire('filedblclick', file);
+            },
+            handlePreviewFile: function(e) {
+                if (this.selected) {
+                    this.fire('previewfile', this.selected);
+                }
+            },
+            handleBack: function() {
+                this.set('selected', null);
+                this.fire('back');
+            },
+            checkFolder: function(folder) {
+                return folder == null;
+            },
+            checkBack: function(folder) {
+                if (folder == null) {
+                    return true
+                } else {
+                    if (folder.name == '.') {
+                        return true;
+                    }
+                }
+                return false;
+            },
+            checkSelected: function(selected) {
+                return selected == null;
+            },
+            computeDelete: function(selected) {
+                if (selected == null) {
+                    return true;
+                } else if (selected.job != undefined) {
+                    return false;
+                } else {
+
+                    return this.fileBelongsToJob[selected.parent];
+                }
+                // return selected == null;
+            },
+            checkPreviewFile: function(selected) {
+                return selected == null || selected.type != "FILE";
+            },
+            checkSelectedFile: function(selected, hideDownloadBtn) {
+                return hideDownloadBtn || selected == null;
+            },
+            checkSelectedJob: function(selected) {
+                return selected == null || selected.job == undefined;
+            },
+
+            checkFilters: function(searchBy, searchByType) {
+                // set filter to null to disable filtering
+                var check = function(typeStr) {
+                    return searchByType.indexOf(typeStr.toLowerCase()) != -1;
+                };
+                var fileMatch = function(item) {
+                    var allFlag = false,
+                        jobFlag = false,
+                        fileFlag = false,
+                        folderFlag = false;
+                    if (check("ALL")) {
+                        allFlag = true;
+                    }
+                    if (check("JOB")) {
+                        jobFlag = (item.job != null);
+                    }
+                    if (check("FILE")) {
+                        fileFlag = (item.type == 'FILE');
+                    }
+                    if (check("FOLDER")) {
+                        folderFlag = (item.job == null && item.type == 'FOLDER');
+                    }
+                    return (allFlag || jobFlag || fileFlag || folderFlag);
+                };
+                if (searchBy == "") {
+                    return function(item) {
+                        return fileMatch(item);
+                    }
+                } else {
+                    // return a filter function for the current search string
+                    var searchBy = searchBy.toLowerCase();
+
+                    var searchableColmuns = [];
+                    for (var i = 0; i < this.columns.length; i++) {
+                        var c = this.columns[i];
+                        if (c.enableSearch == true) {
+                            searchableColmuns.push(c);
+                        }
+                    }
+                    return function(item) {
+                        var matchFlag = fileMatch(item);
+                        var columnFlag = false;
+                        var nameFlag = item.name.toLowerCase().indexOf(searchBy) != -1;
+                        for (var i = 0; i < searchableColmuns.length; i++) {
+                            var c = searchableColmuns[i];
+                            var value = c.formula(item).toLowerCase();
+                            if (value.indexOf(searchBy) != -1) {
+                                columnFlag = true;
+                                break;
+                            }
+                        }
+                        return (nameFlag || columnFlag) && matchFlag;
+                    };
+
+                }
+            },
+            isUploadHidden: function(mode, hideUploadBtn) {
+                return hideUploadBtn || mode === 'folder';
+            },
+
+            handleDownloadFile: function(e) {
+                CbaManager.downloadFile(this.selected._id);
+            },
+            /**/
+            _deleteFile: function() {
+                var me = this;
+                if (this.selected) {
+                    CbaManager.files.delete({
+                        id: this.selected._id,
+                        request: {
+                            success: function(response) {
+                                if (response.response[0].error == null) {
+                                    console.log("delete:");
+                                    console.log(response);
+                                    me.fire('filedelete', {
+                                        file: me.selected
+                                    });
+                                    me.set('selected', null);
+                                } else {
+                                    console.log(response.response[0].error);
+                                }
+                                me.fire('need-refresh');
+                            },
+                            error: function() {
+                                alert('Server error, try again later.');
+                            }
+                        }
+                    });
+                }
+            },
+            computeHeader: function(viewMode) {
+                return viewMode == "list";
+            },
+            computeViewModeIconClass: function(viewMode) {
+                var iconClass = (this.viewMode == "list") ? "fa fa-th" : "fa fa-list";
+                return iconClass;
+            },
+            handleViewMode: function(e) {
+                this.viewMode = (this.viewMode == "list") ? "icon" : "list";
+            },
+            computeClassViewMode: function(viewMode) {
+                if (viewMode == "icon") {
+                    return "horizontal layout wrap";
+                } else {
+                    return "";
+                }
+            },
+            computeContentClass: function(viewMode, showInfo) {
+                if (showInfo) {
+                    return viewMode + " info";
+                } else {
+                    return viewMode;
+                }
+            },
+            compColumTitleWidth: function(column) {
+                var c = column.width;
+                if (column.icon != null) {
+                    c += 20;
+                } else {
+                    c += 7;
+                }
+                return c;
+            },
+            handleViewInfo: function(e) {
+                if (this.selected != null) {
+                    this.showInfo = !this.showInfo;
+                }
+            },
+            handleDragOver: function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                var el = e.currentTarget;
+                el.classList.add('dragover');
+                // console.log('Drag over');
+            },
+            handleDragLeave: function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                var el = e.currentTarget;
+                el.classList.remove('dragover');
+            },
+            handleDragStart: function(e) {
+                // console.log('Drag start');
+                e.dataTransfer.setData("text/plain", e.currentTarget.file._id);
+            },
+            handleDragDrop: function(e) {
+                var me = this;
+                e.preventDefault();
+                e.stopPropagation();
+                var el = e.currentTarget;
+                el.classList.remove('dragover');
+                // console.log("Drag drop");
+                if (e.currentTarget.file.type == 'FOLDER') {
+                    var newParentId = e.currentTarget.file._id;
+                    console.log(newParentId);
+                    var fileId = e.dataTransfer.getData("text");
+                    CbaManager.files.move({
+                        query: {
+                            fileId: fileId,
+                            newId: newParentId
+                        },
+                        request: {
+                            success: function(response) {
+                                if (response.response[0].error == null) {
+                                    console.log(response.response[0].results[0]);
+                                } else {
+                                    console.log(response.response[0].error);
+                                }
+                                me.fire('need-refresh');
+                            },
+                            error: function() {
+                                console.log('Server error, try again later')
+                            }
+                        }
+                    });
+                }
+            },
+            _processChildFile: function(file, isMyFatherAJob) {
+                var isJob = isMyFatherAJob || file.j;
+                this.fileBelongsToJob[file._id] = isJob;
+
+                for (var i = 0; i < file.f.length; i++) {
+                    this._processChildFile(file.f[i], isJob);
+                }
+            },
+            userDataChanged: function(neo, old) {
+                if (neo) {
+                    try {
+                        var home = neo.tree[0];
+                        var homeFiles = home.f;
+                        this.fileBelongsToJob[home._id] = false;
+
+                        for (var i = 0; i < homeFiles.length; i++) {
+                            var file = homeFiles[i];
+                            this._processChildFile(file, false);
+
+                        }
+
+                    } catch (e) {
+
+                    }
+
+                }
+
+            },
+            handleViewJob: function(e) {
+                if (this.selected) {
+                    var jobId = this.selected.job._id;
+                    for (var i = 0; i < this.userData.jobs.length; i++) {
+                        var job = this.userData.jobs[i];
+                        if (job._id === jobId) {
+                            this.fire("jobselect", job);
+                            break;
+                        }
+                    }
+                }
+
+            },
+            changeSort: function(e) {
+                var elem = e.currentTarget;
+                var newSortValue = elem.dataset.sort;
+
+                if (this.sort == newSortValue) {
+                    this.sortASC = !this.sortASC;
+                } else {
+                    this.sort = newSortValue;
+                    this.sortASC = true;
+                }
+            },
+            checkSort: function(sort, sortASC) {
+                switch (sort) {
+                    case "name":
+                        if (sortASC) {
+                            return function(a, b) {
+                                if (a.name === b.name) return 0;
+                                return a.name < b.name ? -1 : 1;
+                            };
+                        } else {
+                            return function(a, b) {
+                                if (a.name === b.name) return 0;
+                                return a.name < b.name ? 1 : -1;
+                            };
+                        }
+
+                        break;
+                    case "size":
+                        if (sortASC) {
+                            return function(a, b) {
+                                if (a.size === b.size) return 0;
+                                return a.size < b.size ? -1 : 1;
+                            };
+                        } else {
+                            return function(a, b) {
+                                if (a.size === b.size) return 0;
+                                return a.size < b.size ? 1 : -1;
+                            };
+                        }
+                        break;
+                    case "createdAt":
+                        if (sortASC) {
+                            return function(a, b) {
+                                return new Date(b.createdAt) - new Date(a.createdAt);
+                            }
+                        } else {
+                            return function(a, b) {
+                                return new Date(a.createdAt) - new Date(b.createdAt);
+                            }
+                        }
+                        break;
+                    case "updatedAt":
+                        if (sortASC) {
+                            return function(a, b) {
+                                return new Date(b.updatedAt) - new Date(a.updatedAt);
+                            }
+                        } else {
+                            return function(a, b) {
+                                return new Date(a.updatedAt) - new Date(b.updatedAt);
+                            }
+                        }
+                        break;
+                    default:
+                        if (sortASC) {
+                            return function(a, b) {
+                                if (a.size === b.size) return 0;
+                                return a.size < b.size ? -1 : 1;
+                            };
+                        } else {
+                            return function(a, b) {
+                                if (a.size === b.size) return 0;
+                                return a.size < b.size ? 1 : -1;
+                            };
+                        }
+                }
+            },
+            _sortOrder: function(sort, sortASC, name) {
+                var order = '';
+                if (sort === name) {
+                    if (sortASC) {
+                        order = 'ASC'
+                    } else {
+                        order = 'DESC'
+                    }
+                }
+                return order;
+            }
+        });
+    </script>
+</dom-module>

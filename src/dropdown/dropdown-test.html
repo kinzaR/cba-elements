@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+        <meta charset="utf-8">
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>dropdown test</title>
+
+        <!--Fonts-->
+        <link href='../../fonts/fonts.css' rel='stylesheet' type='text/css'>
+        <link href='../../../fontawesome/css/font-awesome.min.css' rel='stylesheet' type='text/css'>
+
+        <!--Web Components-->
+        <script src="../../../webcomponentsjs/webcomponents-lite.min.js"></script>
+
+        <link rel="import" href="elm-dropdown.html">
+
+        <link rel="import" href="../../conf/theme.html">
+
+    </head>
+
+    <body>
+        <elm-dropdown style="width:100px;">
+            <div data-button>Menu Button</div>
+            <ul data-menu>
+                <li> A level 0 </li>
+                <li> B level 0 </li>
+                <li data-divider></li>
+                <li data-sub> C level 0
+                    <ul>
+                        <li> D level 1 </li>
+                        <li> E level 1 </li>
+                        <li data-divider></li>
+                    </ul>
+                </li>
+            </ul>
+        </elm-dropdown>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <div style="background-color:black; width:500px; height:500px;">
+            <elm-dropdown dark style="width:100px;">
+                <div data-button>Menu Button</div>
+                <ul data-menu>
+                    <li> A level 0 </li>
+                    <li> B level 0 </li>
+                    <li data-divider></li>
+                    <li data-sub> C level 0
+                        <ul>
+                            <li> D level 1 </li>
+                            <li> E level 1 </li>
+                            <li data-divider></li>
+                        </ul>
+                    </li>
+                </ul>
+            </elm-dropdown>
+        </div>
+
+        <script>
+            var el = document.querySelector('elm-dropdown');
+        </script>
+    </body>
+
+</html>

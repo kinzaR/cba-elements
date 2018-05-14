@@ -1,0 +1,376 @@
+/*
+CONTROLS
+*/
+
+.elm-nosel {
+    -webkit-user-select: none;
+    /* webkit (safari, chrome) browsers */
+    -moz-user-select: none;
+    /* mozilla browsers */
+    -khtml-user-select: none;
+    /* webkit (konqueror) browsers */
+    -ms-user-select: none;
+    /* IE10+ */
+}
+
+input.elm {
+    margin: 0px;
+    font-family: inherit;
+}
+
+label.elm {
+    display: inline-block;
+    color: #666;
+    line-height: 21px;
+    margin-right: 5px;
+}
+
+
+/*label::after {*/
+
+
+/*content: ':'*/
+
+
+/*}*/
+
+label.elm-btn::after {
+    content: none;
+}
+
+div.elm-lbl,
+div.elm-txt {
+    display: block;
+    float: left;
+    box-sizing: border-box;
+    line-height: 21px;
+    border: 1px solid #ccc;
+    padding: 0px 5px;
+    background-color: #f2f2f2;
+    /*font-size: inherit;*/
+}
+
+div.elm-txt {
+    border-color: transparent;
+    background-color: transparent;
+}
+
+label.elm-btn > input[type=radio],
+label.elm-btn > input[type=checkbox] {
+    display: none;
+}
+
+input.elm {
+    width: 100%;
+}
+
+.elm-btn,
+input.elm[type=text],
+input.elm[type=email],
+input.elm[type=password],
+input.elm[type=file],
+input.elm[type=number],
+input.elm[type=color],
+label.elm-btn > input[type=radio] + span,
+label.elm-btn > input[type=checkbox] + span {
+    display: block;
+    position: relative;
+    outline: transparent solid 0px;
+    box-sizing: border-box;
+    line-height: 21px;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    padding: 0px 5px;
+    background-color: #fff;
+    font-size: inherit;
+    font-family: inherit;
+    color: inherit;
+    height: 23px;
+}
+
+input.elm[type=text],
+input.elm[type=email],
+input.elm[type=password],
+input.elm[type=file],
+input.elm[type=number],
+input.elm[type=color]{
+    height: auto;
+}
+
+input.elm[type=number] {
+    padding-right: 0px;
+}
+
+input.elm[type=color] {
+    padding: 0px;
+}
+
+.elm-btn {
+    cursor: pointer;
+}
+.elm-btn.elm-blue {
+    background-color: #188ead !important;
+    color: #fff !important;
+}
+.elm-btn.elm-red {
+    background-color: #bd1a1a !important;
+    color: #fff !important;
+}
+
+.elm-btn:hover {
+    background-color: #f5f5f5;
+}
+.elm-btn.elm-blue:hover {
+    background-color: #20aed4 !important;
+}
+.elm-btn.elm-red:hover {
+    background-color: #db1e1e !important;
+}
+
+.elm-btn.elm-btn-shdw {
+    text-align: center;
+    box-shadow: 2px 2px 3px 0px rgba(0, 0, 0, 0.1);
+    transition: background-color 0.15s;
+}
+
+.elm-btn.elm-btn-big {
+    height: 50px;
+    line-height: 50px;
+    padding: 0px 50px;
+}
+
+.elm-btn.elm-btn-shdw:hover {
+    box-shadow: 2px 2px 3px 0px rgba(0, 0, 0, 0.3);
+}
+
+.elm-btn:active {
+    background-color: #ebebeb;
+}
+.elm-btn.elm-blue:active {
+    background-color: #1e7d96 !important;
+}
+.elm-btn.elm-red:active {
+    background-color: #ac2222 !important;
+}
+
+.elm-btn:disabled {
+    background-color: #D3D3D3;
+}
+
+.elm-btn[data-checked],
+label.elm-btn > input[type=radio]:checked + span,
+label.elm-btn > input[type=checkbox]:checked + span {
+    box-shadow: inset 0 3px 5px rgba(0, 0, 0, .125);
+    background-color: #ebebeb;
+}
+
+label.elm-btn > input[type=radio] + span:hover,
+label.elm-btn > input[type=checkbox]:hover + span:hover {
+    background-color: #ebebeb;
+}
+
+input.elm[type=text],
+input.elm[type=email],
+input.elm[type=number],
+input.elm[type=color],
+input.elm[type=password] {
+    transition: border-color ease-in-out .15s, box-shadow ease-in-out .15s;
+}
+
+textarea.elm,
+input.elm[type=text]:-moz-ui-invalid,
+input.elm[type=email]:-moz-ui-invalid,
+input.elm[type=number]:-moz-ui-invalid,
+input.elm[type=color]:-moz-ui-invalid,
+input.elm[type=password]:-moz-ui-invalid {
+    box-shadow: none;
+}
+
+textarea.elm:focus,
+input.elm[type=text]:focus,
+input.elm[type=email]:focus,
+input.elm[type=number]:focus,
+input.elm[type=color]:focus,
+input.elm[type=password]:focus {
+    border-color: #66afe9;
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075), 0 0 8px rgba(102, 175, 233, .6);
+}
+
+textarea.elm:invalid,
+input.elm[type=text]:invalid,
+input.elm[type=email]:invalid,
+input.elm[type=number]:invalid,
+input.elm[type=color]:invalid,
+input.elm[type=password]:invalid {
+    border-color: rgb(232, 155, 52);
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075), 0 0 8px rgba(232, 155, 52, .6);
+}
+
+input.elm[type=text]:invalid:focus,
+input.elm[type=email]:invalid:focus,
+input.elm[type=number]:invalid:focus,
+input.elm[type=color]:invalid:focus,
+input.elm[type=password]:invalid:focus {
+    border-color: #e32b2b;
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075), 0 0 8px rgba(227, 43, 43, .6);
+}
+
+input.elm[type=text].error,
+input.elm[type=email].error,
+input.elm[type=number].error,
+input.elm[type=color].error,
+input.elm[type=password].error {
+    border-color: #e32b2b;
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075), 0 0 8px rgba(227, 43, 43, .6);
+}
+
+textarea.elm {
+    display: block;
+    position: relative;
+    outline: 0;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    background-color: #fff;
+    font-size: inherit;
+}
+
+.elm-zoom-bar {
+    position: relative;
+    width: 120px;
+    height: 23px;
+    box-sizing: border-box;
+    border-top: 1px solid #ccc;
+    border-bottom: 1px solid #ccc;
+    background-color: #FFFFFF;
+}
+
+.elm-zoom-bar > div {
+    background-color: #BBB;
+    box-sizing: border-box;
+    height: 100%;
+    transition: all 0.2s;
+}
+
+.elm-tooltitle {
+    text-align: center;
+    font-size: 25px;
+    color: #666;
+    margin-bottom: 10px;
+}
+
+
+/*
+    Notes
+    <div class="elm-note elm-note-warn">
+        <div>
+        </div>
+        <div>
+        </div>
+    </div>
+*/
+
+.elm-note {
+    position: relative;
+    padding: 10px 10px 10px 40px;
+    border-left: 5px solid transparent;
+    color: #444;
+}
+
+.elm-note::after {
+    position: absolute;
+    left: 10px;
+    top: 10px;
+    box-sizing: border-box;
+    font-family: FontAwesome;
+    font-size: 16px;
+}
+
+.elm-note-warn {
+    border-left-color: #e9d295;
+    background-color: #faf3d7;
+}
+
+.elm-note-warn::after {
+    content: '\f071';
+    color: #bf9947;
+}
+
+.elm-note-info {
+    border-left-color: #95c9e9;
+    background-color: #e6f1f4;
+}
+
+.elm-note-info::after {
+    content: '\f05a';
+    color: #4790bf;
+}
+
+.elm-note-error {
+    border-left-color: #e99595;
+    background-color: #f4e6e6;
+}
+
+.elm-note-error::after {
+    content: '\f06a';
+    color: #bf4747;
+}
+
+.elm-note-tip {
+    border-left-color: #959595;
+    background-color: #e4e4e4;
+}
+
+.elm-note-tip::after {
+    content: '\f249';
+    color: #474747;
+}
+.elm-note-step {
+    border-left-color: #959595;
+    background-color: #e4e4e4;
+}
+
+.elm-note-step::after {
+    content: '\f024';
+    color: #474747;
+}
+
+
+/*
+    Top Message
+*/
+
+.elm-msg-hidden {
+    position: fixed;
+    z-index: 50000;
+    background: white;
+    border: 1px solid #333;
+    margin: 5px;
+    min-width: 150px;
+    max-width: 200px;
+    right: 0;
+    left: 0;
+    margin-right: auto;
+    margin-left: auto;
+    box-shadow: 0px 0px 2px 1px rgba(0, 0, 0, 0.2);
+    /*top: -200px;*/
+    top: 0px;
+    opacity: 0;
+    transition: opacity 0.4s;
+}
+
+.elm-msg-hidden>:first-child {
+    padding: 5px;
+    color: white;
+    background-color: #333;
+}
+
+.elm-msg-hidden>:last-child {
+    padding: 7px;
+    color: #333;
+    background-color: white;
+}
+
+.elm-msg-shown {
+    /*top: 0px;*/
+    opacity: 1;
+    transition: opacity 1s;
+}

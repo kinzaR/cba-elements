@@ -1,0 +1,158 @@
+<link rel="import" href="../../polymer/polymer.html">
+<dom-module id="elm-tooltip">
+    <style is="custom-style" include="iron-flex iron-flex-reverse iron-flex-alignment iron-flex-factors iron-positioning">
+        :host {
+            display: inline-block;
+            position: relative;
+            box-sizing: border-box;
+            cursor: pointer;
+        }
+
+        #messageInfo {
+            position: fixed;
+            z-index: 200000;
+            box-shadow: 0px 0px 10px 3px rgba(0, 0, 0, 0.30);
+            min-width: 200px;
+            min-height: 100px;
+            margin: 0px;
+            overflow-x: auto;
+            overflow-y: auto;
+        }
+
+        .default {
+            background-color: var(--light-primary-color);
+            color: var(--primary-text-color);
+            padding: 5px;
+        }
+
+        .dark {
+            background-color: var(--dark-primary-color);
+            color: var(--text-primary-color);
+        }
+
+        .closeInfo {
+            position: absolute;
+            top: 7px;
+            right: 7px;
+            cursor: pointer;
+            color: var(--secondary-text-color);
+        }
+
+        .closeInfo:hover,
+        .dark > .closeInfo:hover {
+            color: var(--dark-button-color);
+        }
+
+        .dark > .closeInfo {
+            color: var(--text-primary-color);
+        }
+
+        .info {
+            color: #4790bf;
+        }
+
+        .warn {
+            color: #bf9947;
+        }
+
+        .error {
+            color: #bf4747;
+        }
+
+        .button {
+            color: var(--button-style-color);
+        }
+    </style>
+    <template>
+        <span on-click="showInfo"><i on-click="showInfo" class$="button {{computeIcon(type, icon)}}"></i> {{text}}</span>
+        <div id="messageInfo" class$="{{computeClass(type)}}" hidden>
+            <i class="fa fa-times closeInfo" on-click="handleClose"></i>
+            <content></content>
+        </div>
+
+    </template>
+
+    <script>
+        Polymer({
+            is: "elm-tooltip",
+            properties: {
+                type: {
+                    type: String,
+                    reflectToAttribute: true,
+                    value: "default"
+                },
+                icon: {
+                    type: String,
+                    reflectToAttribute: true,
+                    value: ""
+                },
+                text: {
+                    type: String,
+                    reflectToAttribute: true,
+                    value: ""
+                }
+            },
+            listeners: {
+                click: 'showInfoThis'
+            },
+            showInfo: function(e) {
+                e.stopPropagation();
+                this.$.messageInfo.hidden = !this.$.messageInfo.hidden;
+                this._getPosition();
+                this.fire('tooltip-toggle', !this.$.messageInfo.hidden);
+            },
+            showInfoThis: function(e) {
+                if (e.target === this) {
+                    this.showInfo(e);
+                }
+            },
+            _getPosition: function() {
+                var bcr = this.getBoundingClientRect();
+                var msg = this.$.messageInfo.getBoundingClientRect();
+                var windowHeight = window.innerHeight;
+                var windowWidth = window.innerWidth;
+
+                this.$.messageInfo.style.top = (bcr.bottom) + 'px';
+                this.$.messageInfo.style.left = (bcr.left) + 'px';
+                if ((bcr.bottom + msg.height) > window.innerHeight) {
+                    this.$.messageInfo.style.top = (bcr.top - msg.height) + 'px';
+                }
+                if ((bcr.right + msg.width) > window.innerWidth) {
+                    this.$.messageInfo.style.left = (bcr.left - msg.width) + 'px';
+                }
+
+            },
+            computeClass: function(type) {
+                if (type == "info") {
+                    return "elm-note elm-note-info";
+                } else if (type == "warn") {
+                    return "elm-note elm-note-warn";
+                } else if (type == "error") {
+                    return "elm-note elm-note-error";
+                } else {
+                    return type;
+                }
+            },
+            computeIcon: function(type, icon) {
+                if (icon != null && icon !== '') {
+                    return 'fa fa-' + icon;
+                } else {
+                    if (type == "info") {
+                        return "fa fa-info " + "info";
+                    } else if (type == "warn") {
+                        return "fa fa-exclamation-triangle " + "warn";
+                    } else if (type == "error") {
+                        return "fa fa-exclamation-circle " + "error";
+                    }
+                    return "fa fa-comment-o";
+                }
+            },
+            handleClose: function(e) {
+                e.stopPropagation();
+                this.$.messageInfo.hidden = !this.$.messageInfo.hidden;
+                this.fire('tooltip-toggle', !this.$.messageInfo.hidden);
+            },
+
+        })
+    </script>
+</dom-module>

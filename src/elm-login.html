@@ -1,0 +1,198 @@
+<link rel="import" href="../../polymer/polymer.html">
+<link rel="import" href="../../iron-flex-layout/iron-flex-layout-classes.html">
+<dom-module id="elm-login">
+    <style is="custom-style" include="iron-flex iron-flex-reverse iron-flex-alignment iron-flex-factors iron-positioning">
+        :host {
+            display: block;
+            position: absolute;
+            box-sizing: border-box;
+            padding: 30px 100px;
+            left: 0;
+            right: 0;
+            margin: 0px auto 0px auto;
+            width: 500px;
+            transition: all 0.2s;
+            box-shadow: 0px 0px 12px 6px rgba(0, 0, 0, 0.30);
+            background-color: var(--light-primary-color);
+            color: var(--primary-text-color);
+        }
+
+        .title {
+            text-align: center;
+            font-size: 25px;
+        }
+
+        .icon {
+            font-size: 50px;
+            color: var(--dark-primary-color);
+        }
+
+        .message {
+            margin: 20px 0 0 0;
+            box-shadow: 0px 0px 2px 1px rgba(0, 0, 0, 0.3);
+        }
+
+        .shortcut {
+            cursor: pointer;
+        }
+
+        .right {
+            text-align: right;
+        }
+
+        .shortcut:hover {
+            text-decoration: underline;
+        }
+
+        #button {
+            font-weight: normal;
+            height: auto;
+            padding: 10px 15px;
+            font-size: 16px;
+            border-radius: 3px;
+            color: var(--text-primary-color);
+            background-color: var(--dark-button-color);
+        }
+
+        #button:hover {
+            background-color: var(--light-button-color);
+        }
+    </style>
+    <template>
+        <div class="title">
+            <div>
+                Login
+            </div>
+            <div class="icon">
+                <i class="fa fa-sign-in"></i>
+            </div>
+        </div>
+        <form id="form" on-keypress="handleFormKey">
+            <label class="elm">User name:</label>
+            <input class="elm" type="text" value="{{name::input}}" required pattern="[a-zA-Z0-9._]+">
+
+            <div class="right">
+                <span hidden$={{hideSignup}} class="shortcut" on-click="handleSignup">Create new user...</span>
+            </div>
+            <br>
+            <label class="elm">Password:</label>
+            <input class="elm" type="password" value="{{password::input}}" required>
+
+            <div class="right">
+                <span hidden$={{hideSignup}} class="shortcut" on-click="handleRemember">Remember password...</span>
+            </div>
+            <br>
+            <br>
+
+            <div id="button" class="elm-btn elm-btn-shdw" on-click="handleForm">Login</div>
+            <br>
+            <div hidden$="{{hideAnonymous}}" class="right">
+                <span class="shortcut" on-click="handleAnonymous">Login as anonymous</span>
+                <br>
+                <span style="color:#888">All data will be deleted on logout</span>
+            </div>
+        </form>
+        <div hidden$="{{!message}}" class="message elm-note elm-note-warn">&nbsp;{{message}}</div>
+    </template>
+
+    <script>
+        Polymer({
+            is: "elm-login",
+            properties: {
+                name: {
+                    type: String,
+                    value: ''
+                },
+                password: {
+                    type: String,
+                    value: ''
+                },
+                message: {
+                    type: String,
+                    value: ''
+                },
+                hideSignup: {
+                    type: Boolean,
+                    value: false,
+                    reflectToAttribute: true
+                },
+                hideAnonymous: {
+                    type: Boolean,
+                    value: false,
+                    reflectToAttribute: true
+                },
+            },
+            clean: function() {
+                this.set('name', '');
+                this.set('message', '');
+                this.set('password', '');
+            },
+            handleFormKey: function(e) {
+                if (e.which == 13) {
+                    this.handleForm();
+                }
+            },
+            handleRemember: function(e) {
+                this.fire("remember", {});
+            },
+            handleSignup: function(e) {
+                this.fire("signup", {});
+            },
+            handleForm: function(e) {
+                this.set('message', '');
+
+                if (this.$.form.checkValidity()) {
+                    this._login();
+                }else{
+                    this.set('message', 'Please, you should fill all the fields.');
+                }
+            },
+            handleAnonymous: function() {
+                this.clean();
+                this.fire('anonymous');
+            },
+            _login: function() {
+                var me = this;
+                // console.log(this.name)
+                // console.log(this.password)
+                CbaManager.users.login({
+                    id: this.name,
+                    sid: CryptoJS.SHA1(this.password).toString(),
+                    request: {
+                        success: function(response) {
+                            if (response.response[0].error == null) {
+                                Cookies.set('bioinfo_sid', response.response[0].results[0].id, {
+                                    path: window.location.pathname
+                                });
+                                Cookies.set('bioinfo_user', me.name, {
+                                    path: window.location.pathname
+                                });
+                                me.fire('login', {
+                                    status: true
+                                });
+                                me.clean();
+                            } else {
+                                console.log(response.response[0].error);
+                                me.message = response.response[0].error;
+                            }
+                            me.password = null;
+                        },
+                        error: function(response) {
+                            //Delete all cookies
+                            Cookies.expire('bioinfo_sid', {
+                                path: window.location.pathname
+                            });
+                            Cookies.expire('bioinfo_user', {
+                                path: window.location.pathname
+                            });
+                            me.message = response.error.split(":")[1];
+                            if (response.errorEvent) {
+                                me.message = 'Server error, try again later.';
+                            }
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+</dom-module>

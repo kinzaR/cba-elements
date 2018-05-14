@@ -1,0 +1,140 @@
+<link rel="import" href="../../polymer/polymer.html">
+<link rel="import" href="../../iron-flex-layout/iron-flex-layout-classes.html">
+<dom-module id="elm-remember">
+    <style is="custom-style" include="iron-flex iron-flex-reverse iron-flex-alignment iron-flex-factors iron-positioning">
+        :host {
+            display: block;
+            position: absolute;
+            box-sizing: border-box;
+            padding: 30px 100px;
+            left: 0;
+            right: 0;
+            margin: 0px auto 0px auto;
+            width: 500px;
+            transition: all 0.2s;
+            box-shadow: 0px 0px 12px 6px rgba(0, 0, 0, 0.30);
+            background-color: var(--light-primary-color);
+            color: var(--primary-text-color);
+        }
+
+        .title {
+            text-align: center;
+            font-size: 25px;
+        }
+
+        .icon {
+            font-size: 50px;
+            color: var(--dark-primary-color);
+        }
+
+        .message {
+            margin: 20px 0 0 0;
+            box-shadow: 0px 0px 2px 1px rgba(0, 0, 0, 0.3);
+        }
+
+        #button {
+            font-weight: normal;
+            height: auto;
+            padding: 10px 15px;
+            font-size: 16px;
+            border-radius: 3px;
+            color: var(--text-primary-color);
+            background-color: var(--dark-button-color);
+        }
+
+        #button:hover {
+            background-color: var(--light-button-color);
+        }
+    </style>
+    <template>
+        <div class="title">
+            <div>
+                Reset password
+            </div>
+            <div class="icon color-2">
+                <i class="fa fa-life-ring"></i>
+            </div>
+        </div>
+        <form id="form" on-keypress="handleFormKey">
+            <!-- <label class="elm">User ID</label>
+            <input class="elm" type="text" value="{{user::input}}" required pattern="[a-zA-Z0-9]+">
+            <br> -->
+            <label class="elm">User name:</label>
+            <input class="elm" type="text" value="{{name::input}}" required>
+            <br>
+            <br>
+
+            <div id="button" class="elm-btn elm-btn-shdw" on-click="handleForm">Send reset request</div>
+        </form>
+
+        <div hidden$="{{!message}}" class="horizontal layout center message elm-note elm-note-warn">
+            <template is="dom-if" if="{{loading}}">
+                <i class="fa fa-spinner fa-spin" style="margin-right: 5px;"></i>
+            </template>
+            <div>{{message}}</div>
+        </div>
+    </template>
+    <script>
+        Polymer({
+            is: "elm-remember",
+            properties: {
+                // email: {
+                //     type: String,
+                //     value: ''
+                // },
+                name: {
+                    type: String,
+                    value: ''
+                },
+                message: {
+                    type: String,
+                    value: ''
+                },
+                loading: {
+                    type: Boolean,
+                    value: false
+                }
+            },
+            //        created: function () {
+            //            this.user;
+            //            this.email;
+            //        },
+            handleFormKey: function(e) {
+                if (e.which == 13) {
+                    this.handleForm();
+                }
+            },
+            handleForm: function(e) {
+                var me = this;
+                this.message = '';
+                this.loading = false;
+
+                if (this.$.form.checkValidity()) {
+                    this.message = 'Processing request...';
+                    this.loading = true;
+                    CbaManager.users.resetPassword({
+                        query: {
+                            name: this.name
+                        },
+                        request: {
+                            success: function(response) {
+                                if (response.response[0].error == null) {
+                                    me.message = 'An email was sent with reset password instructions';
+                                } else {
+                                    me.message = response.response[0].error;
+                                }
+                                me.loading = false;
+                            },
+                            error: function() {
+                                me.message = 'Server error, try again later.';
+                                me.loading = false;
+                            }
+                        }
+                    });
+                }else{
+                    this.set('message', "Please, fill the field");
+                }
+            }
+        });
+    </script>
+</dom-module>

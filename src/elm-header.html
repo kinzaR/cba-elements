@@ -1,0 +1,489 @@
+<link rel="import" href="../../polymer/polymer.html">
+<link rel="import" href="../../iron-flex-layout/iron-flex-layout-classes.html">
+
+<script src="manager/cba-manager.js"></script>
+<script src="utils/utils.js"></script>
+
+<link rel="import" href="elm-login.html">
+<link rel="import" href="elm-signup.html">
+<link rel="import" href="elm-profile.html">
+<link rel="import" href="elm-remember.html">
+
+<dom-module id="elm-header">
+    <style is="custom-style" include="iron-flex iron-flex-reverse iron-flex-alignment iron-flex-factors iron-positioning">
+         :host {
+            position: relative;
+            display: block;
+            box-sizing: border-box;
+            cursor: default;
+            width: 100%;
+        }
+
+        .main {
+            position: relative;
+            height: 50px;
+            font-size: 18px;
+            margin: 0;
+            padding: 0;
+            text-transform: none;
+            box-shadow: 0 2px 2px 0px rgba(0, 0, 0, 0.3);
+            /*background-color: inherit;*/
+            background-color: var(--dark-primary-color);
+            color: var(--text-primary-color);
+        }
+
+        #left,
+        #right,
+        #center,
+        #menu-wrapper,
+        #menu-wrapper::content>.menu {
+            height: 100%;
+        }
+
+        #tools {
+            position: absolute;
+            top: 50px;
+            width: 100%;
+        }
+
+        #left>div,
+        #right>div,
+        #menu-wrapper::content>.menu div.option {
+            box-sizing: border-box;
+            cursor: pointer;
+            text-align: center;
+            border-top: 2px solid transparent;
+            border-bottom: 2px solid transparent;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        #left>div>::content>* {
+            margin-left: 10px;
+            padding: 0 0 1px 0;
+        }
+
+        #right>div,
+        #menu-wrapper>::content>.menu div.option {
+            margin-right: 5px;
+            padding: 0 5px 1px 5px;
+        }
+
+         :host[small] #left>div,
+         :host[small] #right>div,
+         :host[small] #menu-wrapper>::content>.menu div.option,
+         :host[small-options] #menu-wrapper>::content>.menu div.option {
+            border-bottom-width: 1px;
+            font-size: 15px;
+        }
+
+        #right>div:hover,
+        #menu-wrapper>::content>.menu div.option:hover {
+            border-bottom-color: var(--divider-color);
+        }
+
+        #menu-wrapper>::content>.menu div.option[active] {
+            font-weight: normal;
+            border-bottom-color: var(--accent-color);
+        }
+
+         :host[small] #right>div:hover,
+         :host[small] #menu-wrapper>::content>.menu div.option:hover,
+         :host[small-options] #menu-wrapper>::content>.menu div.option:hover {
+            border-bottom-width: 1px;
+        }
+
+        #user {
+            color: var(--accent-color);
+            /*font-weight: normal;*/
+            border-bottom: 2px solid transparent !important;
+        }
+
+        div.title {
+            font-size: 30px;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+        div.description {
+            font-size: 18px;
+        }
+
+        div.description:hover {
+            cursor: default;
+        }
+
+        #icon {
+            margin-top: 0px !important;
+            margin-bottom: 0px !important;
+        }
+        /*small*/
+
+         :host[small] .main {
+            height: 32px;
+            font-size: 15px;
+            box-shadow: 0 2px 2px 0px rgba(0, 0, 0, 0.3);
+        }
+
+         :host[small] #tools {
+            top: 32px;
+        }
+
+         :host[small] div.title {
+            font-size: 22px;
+        }
+
+         :host[small] div.description {
+            font-size: 15px;
+        }
+        
+         :host[small] ::content div.icon img {
+            height: 28px !important;
+        }
+        /*Help menu*/
+
+         :host::content .helpmenu,
+         :host::content .launcher,
+         :host::content .cluster_stats {
+            margin: 0 10px;
+        }
+
+         :host::content .helpmenu>[data-menu] {
+            margin-top: 10px;
+            padding: 5px;
+        }
+    </style>
+    <template>
+        <div id="tools">
+            <elm-login id="elmLogin" hide-signup$="{{hideSignup}}" hide-anonymous$="{{hideAnonymous}}" menu-option="login" on-login="handleLogin" on-remember="handleRemember" on-signup="handleSignup" on-anonymous="handleAnonymous">
+            </elm-login>
+
+            <elm-signup id="elmSignup" on-login="handleLogin" menu-option="signup">
+            </elm-signup>
+
+            <elm-profile id="elmProfile" menu-option="profile">
+            </elm-profile>
+
+            <elm-remember menu-option="remember">
+            </elm-remember>
+        </div>
+
+        <div class="main horizontal layout center">
+            <div id="left" class="horizontal layout start-justified center">
+                <div on-click="handleMenu">
+                    <content select=".menu-button"></content>
+                </div>
+                <div id="icon" data-option="home" on-click="handleMenu">
+                    <content select=".icon"></content>
+                </div>
+                <div class="title" data-option="home" on-click="handleMenu">
+                    <content select=".title"></content>
+                </div>
+                <div id="description" class="description" data-option="home" on-click="handleMenu">
+                    <content select=".description"></content>
+                </div>
+            </div>
+            <div id="center" class="horizontal layout flex center">
+                <div id="menu-wrapper" hidden$="{{computeMenu(showMenuOnLogin, isLogged)}}" class="horizontal layout center flex">
+                    <content select=".menu"></content>
+                </div>
+            </div>
+            <div id="right" class="horizontal layout end-justified center">
+                <div id="user" hidden$="{{computeUser(hideLogin, isLogged)}}">
+                    <span class="option-text">{{userText}}</span>
+                </div>
+
+                <div title="Edit user settings" id="profile" data-option="profile" on-click="handleMenu" hidden$="{{computeProfile(userText, hideSignup, hideLogin, isLogged)}}">
+                    <i class="fa fa-user"></i>
+                    <span class="option-text"> Profile </span>
+                </div>
+
+                <div title="Logout" id="logout" on-click="handleLogoutClick" hidden$="{{computeLogout(hideLogin, isLogged)}}">
+                    <i class="fa fa-sign-out"></i>
+                    <span class="option-text"> Logout </span>
+                </div>
+
+                <div title="Login" id="login" data-option="login" on-click="handleMenu" hidden$="{{computeLogin(hideLogin, isLogged)}}">
+                    <i class="fa fa-sign-in"></i>
+                    <span class="option-text"> Login </span>
+                </div>
+
+                <div title="Sign up" id="signup" data-option="signup" on-click="handleMenu" hidden$="{{computeSignup(hideSignup, hideLogin, isLogged)}}">
+                    <i class="fa fa-pencil-square-o"></i>
+                    <span class="option-text"> Sign up </span>
+                </div>
+
+                <content select=".launcher"></content>
+
+                <content select=".cluster-status"></content>
+
+                <content select=".helpmenu"></content>
+            </div>
+        </div>
+    </template>
+
+    <script>
+        Polymer({
+            is: "elm-header",
+            properties: {
+                checkTimeInterval: {
+                    type: Number,
+                    value: 5000,
+                    reflectToAttribute: true
+                },
+                selectedOption: {
+                    type: String,
+                    value: "home",
+                    notify: true,
+                    reflectToAttribute: true,
+                    observer: 'selectedOptionChanged'
+                },
+                hideLogin: {
+                    type: Boolean,
+                    value: false,
+                    reflectToAttribute: true
+                },
+                hideSignup: {
+                    type: Boolean,
+                    value: false,
+                    reflectToAttribute: true
+                },
+                /* @Deprecated */
+                showMenuOnLogin: {
+                    type: Boolean,
+                    value: false,
+                    reflectToAttribute: true
+                },
+                isLogged: {
+                    type: Boolean,
+                    value: false
+                },
+                hideAnonymous: {
+                    type: Boolean,
+                    value: false,
+                    reflectToAttribute: true
+                },
+                userData: {
+                    type: Object,
+                    notify: true
+                },
+                userText: {
+                    type: String,
+                    value: ''
+                },
+                jobItem: {
+                    type: Object
+                },
+                allowedTools: {
+                    type: Array
+                },
+                small: {
+                    type: Boolean,
+                    value: false,
+                    reflectToAttribute: true
+                }
+            },
+
+            computeMenu: function(showMenuOnLogin, isLogged) {
+                if (showMenuOnLogin) {
+                    return !isLogged;
+                }
+                return false;
+            },
+
+            computeUser: function(hideLogin, isLogged) {
+                if (hideLogin) {
+                    return true;
+                }
+                return !isLogged
+            },
+            computeProfile: function(userText, hideSignup, hideLogin, isLogged) {
+                if (hideSignup || hideLogin || userText == 'anonymous') {
+                    return true;
+                }
+                return !isLogged
+            },
+            computeLogout: function(hideLogin, isLogged) {
+                if (hideLogin) {
+                    return true;
+                }
+                return !isLogged
+            },
+            computeSignup: function(hideSignup, hideLogin, isLogged) {
+                if (hideLogin || hideSignup) {
+                    return true;
+                }
+                return isLogged
+            },
+            computeLogin: function(hideLogin, isLogged) {
+                if (hideLogin) {
+                    return true;
+                }
+                return isLogged
+            },
+            selectedOptionChanged: function(neo, old) {
+                var menuItems = Polymer.dom(this.root).querySelectorAll('[menu-option]');
+                for (var i = 0; i < menuItems.length; i++) {
+                    var item = menuItems[i];
+                    var currentItemValue = item.getAttribute("menu-option");
+                    if (neo == currentItemValue) {
+                        item.removeAttribute("hidden");
+                    } else {
+                        item.setAttribute('hidden', '');
+                    }
+                }
+            },
+            //TODO
+            ready: function() {
+                if (!this.hideLogin) {
+                    if (Cookies("bioinfo_sid") && Cookies("bioinfo_user")) {
+                        this.sessionInitiated();
+                    } else {
+                        this.sessionFinished();
+                    }
+                }
+            },
+            handleRemember: function(e) {
+                this.selectedOption = 'remember';
+            },
+            handleSignup: function(e) {
+                this.selectedOption = 'signup';
+            },
+            handleAnonymous: function(e) {
+                this.anonymousSign();
+            },
+            handleMenu: function(e) {
+                var option = e.currentTarget.dataset['option'];
+                console.log(option);
+                if (option) {
+                    this.selectedOption = option;
+                }
+            },
+            handleLogoutClick: function(e) {
+                this.sessionFinished();
+            },
+            handleSupportMenu: function(e) {
+                this.$.helpMenu.classList.toggle('help-menu-shown');
+            },
+            handleHelpMenuMouseOut: function() {
+                this.$.helpMenu.classList.remove('help-menu-shown');
+            },
+            handleLogin: function(e) {
+                e.stopPropagation();
+                if (e.detail.status) {
+                    this.sessionInitiated();
+                } else {
+                    this.sessionFinished();
+                }
+                this.fire('session-change');
+            },
+            demoLogin: function(username) {
+                this.$.elmLogin.user = username;
+                this.$.elmLogin.password = "demo";
+                this.$.elmLogin._login();
+            },
+            anonymousSign: function() {
+                this.$.elmSignup.name = "anonymous";
+                this.$.elmSignup.email = "anonymous@anonymous.anonymous";
+                this.$.elmSignup.password = "anonymous";
+                this.$.elmSignup._signup();
+            },
+            sessionInitiated: function(e) {
+                var me = this;
+                this.isLogged = true;
+                this.selectedOption = 'home';
+
+                /**START CHECK**/
+                if (!this.userInfoInterval) {
+                    this.getUserInfo(); //first call
+                    this.userInfoInterval = setInterval(function() {
+                        me.getUserInfo();
+                    }, this.checkTimeInterval);
+                }
+                this.fire("login");
+            },
+            sessionFinished: function(e) {
+                this.logout();
+                this.isLogged = false;
+                this.userData = null;
+                this.selectedOption = 'home';
+                this.userText = '';
+                Cookies.expire('bioinfo_sid', {
+                    path: window.location.pathname
+                });
+                Cookies.expire('bioinfo_user', {
+                    path: window.location.pathname
+                });
+
+                /**END CHECK**/
+                clearInterval(this.userInfoInterval);
+                this.userInfoInterval = null;
+                this.fire("logout");
+            },
+            getUserInfo: function(force) {
+                var me = this;
+                var updatedAt = null;
+                if (force != true) {
+                    if (this.userData != null) {
+                        updatedAt = this.userData.updatedAt;
+                    }
+                }
+                var user = Cookies('bioinfo_user');
+                if (!user) {
+                    console.log('cookie: bioinfo_user, is not set, session will be finished...');
+                    this.sessionFinished();
+                } else {
+                    CbaManager.users.read({
+                        id: user,
+                        query: {
+                            updatedAt: updatedAt
+                        },
+                        request: {
+                            success: function(response) {
+                                if (response.response[0].error == null && response.response[0].results.length > 0) {
+                                    me.userData = response.response[0].results[0];
+                                    me.userText = me._checkUserName(me.userData);
+                                    console.info("userData has been modified since last call");
+                                }
+                                if (response.response[0].error != null) {
+                                    me.sessionFinished()
+                                }
+                            },
+                            error: function() {
+                                console.log('Server error, try again later.');
+                            }
+                        }
+                    });
+                }
+            },
+            logout: function() {
+                var me = this;
+                var user = Cookies('bioinfo_user');
+                if (!user) {
+                    console.log('cookie: bioinfo_user, is not set, session will be finished...');
+                } else {
+                    CbaManager.users.logout({
+                        id: user,
+                        request: {
+                            success: function(response) {
+                                console.log(response);
+                            },
+                            error: function() {
+                                console.log('Server error, try again later.');
+                            }
+                        }
+                    });
+                }
+            },
+            _checkUserName: function(userData) {
+                if (userData.name.indexOf('anonymous___') != -1) {
+                    return 'anonymous';
+                } else {
+                    return userData.name;
+                }
+            }
+        });
+    </script>
+</dom-module>

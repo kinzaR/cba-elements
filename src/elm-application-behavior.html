@@ -1,0 +1,345 @@
+<link rel="import" href="../../polymer/polymer.html">
+<script>
+    elmApplicationBehavior = {
+        properties: {
+            version: {
+                type: String,
+                reflectToAttribute: true
+            },
+            selectedOption: {
+                type: String,
+                value: "home",
+                notify: true,
+                reflectToAttribute: true
+            },
+            userData: {
+                type: Object,
+                notify: true
+            },
+            projects: {
+                type: Array,
+                notify: true
+            },
+            maintenance: {
+                type: String,
+                value: '',
+                reflectToAttribute: true,
+                observer: 'checkMaintenance'
+            },
+            smallHeader: {
+                type: Boolean,
+                value: false,
+                reflectToAttribute: true,
+            },
+            _lastLoggedPanel: {
+                type: Object
+            },
+            _lastLoggedMenu: {
+                type: String
+            },
+            _lastLoggedTasks: {
+                type: Array,
+                value: function() {
+                    return []
+                }
+            },
+            queryParams: {
+                type: Object,
+                value: function() {
+                    return {};
+                }
+            }
+        },
+        observers: [
+            '_selectedOptionChanged(selectedOption)',
+            'selectedOptionChanged(selectedOption)',
+            '_userDataChanged(userData)',
+            'userDataChanged(userData)',
+            '_handleLoadJobFromQueryParam(queryParams.job)'
+        ],
+        listeners: {
+            'need-refresh': 'handleNeedRefresh',
+        },
+        ready: function() {
+            var me = this;
+            //cookies
+            if (Cookies('app-accept-cookies') == null) {
+                var div = document.createElement('div');
+                div.classList.add('elm-note', 'elm-note-info');
+                div.style.position = 'fixed';
+                div.style.left = '0';
+                div.style.right = '0';
+                div.style.top = '5px';
+                div.style.zIndex = '10000';
+                div.style.fontSize = '13px';
+                div.style.width = '600px';
+                div.style.margin = '0 auto';
+                div.style.cursor = 'pointer';
+                div.style.boxShadow = '0px 0px 6px 3px rgba(0, 0, 0, 0.30)';
+                var msg = [
+                    'This website uses cookies.',
+                    'By continuing to browse this site,',
+                    ' you are agreeing to the use of our site cookies.',
+                    '<div style="font-size:12px;text-align:right;text-decoration:underline;">OK</div>'
+                ];
+                div.innerHTML = msg.join(' ');
+                div.addEventListener('click', function() {
+                    Polymer.dom(me.root).removeChild(div);
+                    Cookies.set('app-accept-cookies', 'true', {
+                        expires: 3600 * 24 * 7
+                    }); // Expires in 1 week
+                });
+                Polymer.dom(this.root).appendChild(div);
+            }
+
+            this.queryParams = this._parseQueryParams();
+            this.checkShowMenuOnLogin();
+
+        },
+        _selectedOptionChanged: function(neo, old) {
+            var menuItems = Polymer.dom(this.root).querySelectorAll('[menu-option]');
+            for (var i = 0; i < menuItems.length; i++) {
+                var item = menuItems[i];
+                var currentItemValues = item.getAttribute("menu-option").split(',');
+                if (currentItemValues.indexOf(neo) != -1) {
+                    item.removeAttribute("hidden");
+                } else {
+                    item.setAttribute('hidden', '');
+                }
+            }
+
+            var optionItems = Polymer.dom(this.root).querySelectorAll('[data-option]');
+            for (var i = 0; i < optionItems.length; i++) {
+                var el = optionItems[i];
+                if (el.dataset.option === this.selectedOption) {
+                    el.setAttribute('active', '');
+                } else {
+                    el.removeAttribute('active')
+                }
+            }
+        },
+        selectedOptionChanged: function() {},
+        handleNeedRefresh: function() {
+            console.log('need-refresh');
+            if (this.$.elmHeader != null) {
+                this.$.elmHeader.getUserInfo(true);
+            }
+        },
+        handleMenuOption: function(e) {
+            var menuOption = e.currentTarget;
+            if (menuOption.getAttribute('login-required') == null) {
+                var option = menuOption.dataset['option'];
+                this.setMenu(option);
+            } else if (this.$.elmHeader != null) {
+                var option = e.currentTarget.dataset['option'];
+                if (this.$.elmHeader.isLogged) {
+                    this.setMenu(option);
+                } else {
+                    this.selectedOption = 'login';
+                    this._lastLoggedMenu = option;
+                }
+            }
+        },
+        setMenu: function(option) {
+            if (option) {
+                this.set('selectedOption', option);
+            }
+        },
+        handleMenuPanel: function(e) {
+            var menuOption = e.currentTarget;
+            var panel = this.$[menuOption.dataset.panel];
+            if (menuOption.getAttribute('login-required') == null) {
+                panel.hidden = !panel.hidden;
+            } else if (this.$.elmHeader != null) {
+                var panel = this.$[e.currentTarget.dataset.panel];
+                if (panel == null) {
+                    panel = document.querySelector(e.currentTarget.dataset.panel);
+                }
+                if (this.$.elmHeader.isLogged) {
+                    panel.hidden = !panel.hidden;
+                    if (panel.hidden) {
+                        menuOption.removeAttribute('active');
+                    } else {
+                        menuOption.setAttribute('active', '');
+                    }
+                } else {
+                    this.selectedOption = 'login';
+                    this._lastLoggedPanel = panel;
+                }
+
+            }
+        },
+        handlePanelHidden: function(e) {
+            var id = e.currentTarget.getAttribute('id');
+            var sel = '[data-panel=' + id + ']';
+            var el = Polymer.dom(this.$.menu).querySelector(sel);
+            if (el != null) {
+                if (e.currentTarget.hidden) {
+                    el.removeAttribute('active');
+                } else {
+                    el.setAttribute('active', '');
+                }
+            }
+        },
+        _userDataChanged: function(neo, old) {
+            var me = this;
+            if (this.userData) {} else {
+                console.log("no user data")
+            }
+
+            if (this.$.elmHeader != null) {
+                if (this.$.elmHeader.isLogged) {
+                    if (this._lastLoggedPanel) {
+                        this._lastLoggedPanel.show();
+                        this._lastLoggedPanel = null;
+                    }
+                    if (this._lastLoggedMenu) {
+                        this.setMenu(this._lastLoggedMenu);
+                        this._lastLoggedMenu = null;
+                    }
+                    for (var i = 0; i < this._lastLoggedTasks.length; i++) {
+                        var task = this._lastLoggedTasks[i];
+                        task();
+                    }
+                    this.set('_lastLoggedTasks', []);
+                }
+            }
+
+            this.checkShowMenuOnLogin();
+        },
+        userDataChanged: function() {},
+        checkMaintenance: function(neo) {
+            var me = this;
+            if (neo != null && neo !== '') {
+                var currentDate = new Date();
+                var split = this.maintenance.split(",");
+                var startDate = Date.parse(split[0]);
+                var endDate = Date.parse(split[1]);
+                if (currentDate < startDate || (currentDate >= startDate && currentDate <= endDate)) {
+                    var maintenance = Polymer.dom(this).querySelector('#maintenance');
+                    if (maintenance == null) {
+                        var maintenance = document.createElement('div');
+                        maintenance.classList.add('elm-note', 'elm-note-warn');
+                        maintenance.setAttribute('id', 'maintenance');
+                        maintenance.style.position = 'fixed';
+                        maintenance.style.left = '0';
+                        maintenance.style.right = '0';
+                        maintenance.style.top = '10px';
+                        maintenance.style.zIndex = '10000';
+                        maintenance.style.fontSize = '16px';
+                        maintenance.style.width = '500px';
+                        maintenance.style.margin = '0 auto';
+                        maintenance.style.boxShadow = '0px 0px 6px 3px rgba(0, 0, 0, 0.30)';
+                    }
+
+                    if (currentDate < startDate) {
+                        var diffMessage = elm.utils.timeDiff(split[0], split[1]);
+                        var msg = ['There will be a <b>', diffMessage,
+                            '</b> downtime on this site for maintenance from: <br><br> <b>',
+                            new Date(startDate).toString(), '</b> to <br> <b>' + new Date(endDate).toString(), '</b><br><br>',
+                            'We apologize for any inconvenience.',
+                            '<br> <div style="font-size:14px;text-align:right;">Click to dimiss this message.</div>'
+                        ];
+                        maintenance.addEventListener('click', function() {
+                            Polymer.dom(me.root).removeChild(maintenance);
+                        });
+                        Polymer.dom(this.root).appendChild(maintenance);
+                    }
+
+                    if (currentDate >= startDate && currentDate <= endDate) {
+                        var diffMessage = elm.utils.timeDiff(currentDate, split[1]);
+                        var msg = ['This site is under maintenance we will be back in: <b><br><br>',
+                            diffMessage, '</b> <br><br>',
+                            'We apologize for any inconvenience.',
+                        ];
+                        document.body.removeChild(this);
+                        document.body.appendChild(maintenance);
+                        document.body.style.backgroundColor = '#333';
+                    }
+
+                    maintenance.innerHTML = msg.join(' ');
+                }
+            }
+        },
+        checkShowMenuOnLogin: function() {
+            if (this.$.elmHeader != null) {
+                var menuButtons = this.querySelectorAll("[login-visible]");
+                for (var i = 0; i < menuButtons.length; i++) {
+                    var menuOption = menuButtons[i];
+                    var panel = this.$[menuOption.dataset.panel];
+                    if (!this.$.elmHeader.isLogged) {
+                        menuOption.hidden = true;
+                        if (panel != null) {
+                            panel.hide();
+                        }
+                    } else {
+                        menuOption.hidden = false;
+                    }
+                }
+                var menuButtons = this.querySelectorAll("[login-required]");
+                for (var i = 0; i < menuButtons.length; i++) {
+                    var menuOption = menuButtons[i];
+                    var panel = this.$[menuOption.dataset.panel];
+                    if (!this.$.elmHeader.isLogged) {
+                        if (panel != null) {
+                            panel.hide();
+                        }
+                    }
+                }
+            }
+        },
+        _parseQueryParams: function() {
+            var url = window.location.href;
+            var queryParams = {};
+            if (url.indexOf("?") >= 0) {
+                var qp = url.substring(url.indexOf("?") + 1).split("&");
+                for (var i = 0; i < qp.length; i++) {
+                    var elem = qp[i];
+                    var fields = elem.split("=");
+                    if (fields.length == 1) { // key
+                        queryParams[fields[0]] = "";
+                    } else if (fields.length == 2) { // key=value
+                        queryParams[fields[0]] = fields[1];
+                    }
+                }
+            }
+            return queryParams;
+        },
+        getQueryParam: function(name) {
+            var url = window.location.href;
+            name = name.replace(/[\[\]]/g, "\\$&");
+            var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+                results = regex.exec(url);
+            if (!results) return null;
+            if (!results[2]) return '';
+            return decodeURIComponent(results[2].replace(/\+/g, " "));
+        },
+        _handleLoadJobFromQueryParam: function(jobId) {
+            var me = this;
+            if (jobId != null && jobId != "") {
+                var elmReport = me.querySelector("elm-report");
+                var elmReportParent = elm.utils.closest(elmReport, "[menu-option]");
+
+                if (this.$.elmHeader != null && elmReportParent != null) {
+                    var menuOption = elmReportParent.getAttribute("menu-option");
+                    var goJob = function() {
+                        CbaManager.getJob(jobId, function(job) {
+                            if (job && job.status == "DONE") {
+                                elmReport.job = job;
+                                me.setMenu(menuOption);
+                            } else {
+                                me.setMenu('home');
+                            }
+                        });
+                    }
+                    if (this.$.elmHeader.isLogged) {
+                        goJob();
+                    } else {
+                        this.push('_lastLoggedTasks', goJob);
+                        me.setMenu('login');
+                    }
+                }
+            }
+        }
+    };
+</script>

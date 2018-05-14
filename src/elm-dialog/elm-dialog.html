@@ -1,0 +1,370 @@
+<link rel="import" href="../../../polymer/polymer.html">
+<link rel="import" href="../../../iron-flex-layout/iron-flex-layout.html">
+<!--
+`<elm-dialog>` allows the user to emulate the behavior of window.confirm(), window.alert() and window.prompt().
+
+When the dialog box pops up, it blocks the rest of the page content until the user clicks the ok or
+cancel button. When the user does, the callback provided is executed passing to it a boolean value representing the
+user's response (**true** if the user clicked the ok button and **false** otherwise)
+
+### Use example
+```
+...
+<body>
+    <elm-dialog id="example"></elm-dialog>
+</body>
+<script>
+var element = document.querySelector("#example");
+element.confirm("This is an example", function(response){
+    if(response){
+        console.log("The user confirmed");
+    } else {
+        console.log("The user rejected");
+    }
+});
+</script>
+...
+```
+> **Important**: `<elm-dialog>` needs to be loaded in the DOM in order to work. Otherwise the dialog box will not
+ be displayed.
+
+### Styling
+
+`<elm-dialog>` provides the following custom properties and mixins for styling:
+
+Custom property | Description | Default
+----------------|-------------|----------
+`--modal-window-background` | Sets the background-color for the dialog box | `rgb(230,230,230)`
+`--modal-window-style` | Mixin that will be applied to the dialog box| `{}`
+`--buttons-style` | Mixin that will be applied to the `<button>` elements | `{}`
+
+> **Note**: In order to block the page content, `<elm-dialog>` uses the z-index 1001 . Every dom element
+with a z-index above this value will not be blocked.
+
+ @demo demo/index.html
+ -->
+<dom-module id="elm-dialog">
+    <template>
+        <style>
+            #message {
+                /*font-weight: bold;*/
+                text-align: center;
+                font-size: 1.15em;
+            }
+
+            #title {
+                box-sizing: border-box;
+                font-size: 1.2em;
+                text-transform: capitalize;
+                padding: 7px 10px;
+                background-color: #444;
+                color: #fff;
+            }
+
+            #content {
+                box-sizing: border-box;
+                background-color: var(--modal-window-background, rgb(255, 255, 255));
+                padding: 10px 15px;
+                @apply(--layout-flex);
+            }
+
+            .blocking-div {
+                position: absolute;
+                top: 0;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                z-index: 1001;
+                background-color: rgba(0, 0, 0, 0.7);
+            }
+
+            .modal-window {
+                box-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
+                position: absolute;
+                top: 30%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                z-index: 1002;
+                @apply(--modal-window-style);
+                @apply(--layout-vertical);
+                min-height: 200px;
+                width: 350px;
+            }
+
+            .buttons {
+                @apply(--layout-horizontal);
+                @apply(--layout-end-justified);
+                padding: 5px;
+                background-color: #eee;
+                /*height: 40px;*/
+            }
+
+            .buttons>div,
+            input {
+                font-size: 1.1em;
+                display: block;
+                position: relative;
+                outline: transparent solid 0px;
+                box-sizing: border-box;
+                border: 1px solid rgba(0, 0, 0, 0.3);
+                padding: 4px 7px;
+                background-color: #ffffff;
+                font-family: inherit;
+                color: inherit;
+                cursor: pointer;
+                box-shadow: 2px 2px 3px 0px rgba(0, 0, 0, 0.1);
+                transition: background-color 0.3s;
+                @apply(--buttons-style);
+                margin: 0 5px;
+                width: 100px;
+                text-align: center;
+            }
+
+            input[type=text] {
+                transition: border-color ease-in-out .15s, box-shadow ease-in-out .15s;
+                box-shadow: none;
+            }
+
+            input[type=text]:-moz-ui-invalid {
+                box-shadow: none;
+            }
+
+            input[type=text]:focus {
+                border-color: #66afe9;
+                box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075), 0 0 8px rgba(102, 175, 233, .6);
+            }
+
+            .buttons>div:hover {
+                background-color: #f8f8f8;
+                box-shadow: 2px 2px 3px 0px rgba(0, 0, 0, 0.3);
+            }
+
+            .buttons>div:active {
+                background-color: #eeeeee;
+            }
+
+            #ok {
+                background-color: #188ead !important;
+                color: var(--text-primary-color) !important;
+            }
+
+            #ok:hover {
+                background-color: #20aed4 !important;
+            }
+
+            #cancel {
+                background-color: #bd1a1a !important;
+                color: var(--text-primary-color) !important;
+            }
+
+            #cancel:hover {
+                background-color: #db1e1e !important;
+            }
+
+            .input-wrapper {
+                display: block;
+                width: 100%;
+                position: relative;
+                box-sizing: border-box;
+                padding: 10px 0;
+            }
+
+            input {
+                width: 100%;
+            }
+        </style>
+        <div class="blocking-div">
+            <div class="modal-window">
+                <div id="title">{{_mode}}</div>
+                <div id="content">
+                    <div id="message">
+                        {{message}}
+                    </div>
+                    <div class="input-wrapper">
+                        <input type="text" id="text" hidden value$="{{defaultText}}">
+                    </div>
+                </div>
+                <div id="buttonsHolder" class="buttons">
+                    <div id="cancel" on-click="_handleCancel" hidden>{{cancelText}}</div>
+                    <div id="ok" on-click="_handleOk">{{okText}}</div>
+                </div>
+            </div>
+        </div>
+
+    </template>
+    <script>
+        elmDialog = Polymer({
+            is: "elm-dialog",
+            factoryImpl: function(args) {
+                if (args instanceof Object) {
+                    for (var prop in args) {
+                        if (hasOwnProperty.call(args, prop)) {
+                            if (args[prop] != null) {
+                                this.set(prop, args[prop])
+                            }
+                        }
+                    }
+                }
+            },
+            properties: {
+
+                hidden: {
+                    type: Boolean,
+                    reflectOnAttribute: true
+                },
+
+                /**
+                 * The type of dialog box to be displayed: "confirm", "alert" or "prompt"
+                 */
+                _mode: {
+                    type: String
+                },
+
+                _hasParent: Boolean,
+
+                cancelText: {
+                    type: String,
+                    value: 'Cancel'
+                },
+                okText: {
+                    type: String,
+                    value: 'OK'
+                },
+                defaultText: {
+                    type: String,
+                    value: ''
+                }
+            },
+
+            ready: function() {
+                this.hidden = true;
+            },
+
+            /**
+             * Holder for the passed **callback** when calling confirm, alert or prompt functions
+             */
+            _callback: undefined,
+
+            /**
+             * Calls to _executeCb passing true
+             */
+            _handleOk: function() {
+                this._executeCb(true);
+            },
+
+            /**
+             * Calls to _executeCb passing false
+             */
+            _handleCancel: function() {
+                this._executeCb(false);
+            },
+
+            /** Executes _callback passing to it the user response as a boolean.  If _mode === "prompt" it
+             * passes the input text as well to _callback. Then it sets _callback to undefined and hides the dialog box.
+             *
+             * @param userResponse {boolean}
+             */
+            _executeCb: function(userResponse) {
+                if (this._callback !== undefined) {
+                    if (this._mode === "prompt") {
+                        this._callback(userResponse, this.$.text.value);
+                    } else {
+                        this._callback(userResponse);
+                    }
+                }
+
+                this._callback = undefined;
+                this._closeDialog();
+            },
+
+            /**
+             * Sets the message inside the confirm button and the elements needed according to **_mode**.
+             *
+             * @param {string} confirmBtnMessage The message that will be displayed inside the ok button
+             */
+            _setElement: function() {
+                if (this._mode === "prompt") {
+                    this.$.text.removeAttribute("hidden");
+                    //TODO: Fix -> The user needs to press enter for the focus to work.
+                    this.$.text.focus();
+                    this.$.cancel.removeAttribute("hidden");
+                } else {
+                    this.$.ok.focus();
+                    if (this._mode === "confirm") {
+                        this.$.cancel.removeAttribute("hidden");
+                    }
+                }
+
+            },
+
+            /**
+             * Resets all the element light DOM to default values
+             */
+            _closeDialog: function() {
+                this.$.text.setAttribute("hidden", true);
+                this.$.cancel.setAttribute("hidden", true);
+                this.$.text.value = "";
+                this.hidden = true;
+
+                if (this._hasParent === false) {
+                    document.body.removeChild(this);
+                }
+            },
+
+            /**
+             * Shows an confirm-like dialog to the user.
+             *
+             * @param {string} msg Message to be displayed in the dialog box
+             * @param {function} cb
+             */
+            confirm: function(msg, cb) {
+                if (this.parentElement == null) {
+                    this._hasParent = false;
+                    document.body.appendChild(this)
+                }
+                this._mode = "confirm";
+                this._setElement();
+                this.message = msg;
+                this.hidden = false;
+                this._callback = cb;
+            },
+
+            /**
+             * Shows an alert-like dialog to the user.
+             *
+             * @param {string} msg Message to be displayed in the dialog box
+             * @param {function} cb
+             */
+            alert: function(msg, cb) {
+                if (this.parentElement == null) {
+                    this._hasParent = false;
+                    document.body.appendChild(this)
+                }
+                this._mode = "alert";
+                this._setElement();
+                this.message = msg;
+                this.hidden = false;
+                this._callback = cb;
+            },
+
+            /**
+             * Shows an prompt-like dialog. Additionally to the user's response, the user's input will be passed as
+             * second parameter to the cb.
+             *
+             * @param {string} msg Message to be displayed in the dialog box
+             * @param {function} cb
+             */
+            prompt: function(msg, cb) {
+                if (this.parentElement == null) {
+                    this._hasParent = false;
+                    document.body.appendChild(this)
+                }
+                this._mode = "prompt";
+                this._setElement();
+                this.message = msg;
+                this.hidden = false;
+                this._callback = cb;
+            }
+        })
+    </script>
+</dom-module>

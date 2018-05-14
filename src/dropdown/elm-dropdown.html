@@ -1,0 +1,261 @@
+<link rel="import" href="../../../polymer/polymer.html">
+<link rel="import" href="../../../iron-flex-layout/iron-flex-layout-classes.html">
+<dom-module id="elm-dropdown">
+    <style is="custom-style" include="iron-flex iron-flex-reverse iron-flex-alignment iron-flex-factors iron-positioning">
+         :host {
+            position: relative;
+            display: block;
+            box-sizing: border-box;
+            /*margin-right: 5px;*/
+            /*margin-left: 5px;*/
+            /*border: 1px solid #afafaf;*/
+            color: var(--primary-text-color);
+        }
+
+         :host::content ul>li a:hover {
+            text-decoration: none;
+        }
+
+         :host::content>[data-button] {
+            /*padding: 5px;*/
+            height: 100%;
+            cursor: pointer;
+            outline: transparent solid 0px;
+        }
+
+         :host::content>[data-button]:hover {
+            background-color: var(--hover-color);
+        }
+
+         :host::content ul {
+            box-sizing: border-box;
+            display: none;
+            position: absolute;
+            list-style: none;
+            text-decoration: none;
+            z-index: 100000;
+            border: 1px solid var(--divider-color);
+            background-color: var(--light-primary-color);
+            color: var(--primary-text-color);
+            min-width: 200px;
+            padding: 0;
+            box-shadow: 4px 4px 4px rgba(0, 0, 0, 0.2);
+            text-align: left;
+            text-transform: none;
+            margin: 1px 0 0 0;
+            /*transition: all 0.25s;*/
+        }
+
+         :host[no-min-width] ::content ul {
+            min-width: initial;
+        }
+
+         :host::content ul {
+            left: 0;
+            top: 100%;
+        }
+
+         :host::content ul[data-upward] {
+            top: inherit;
+            bottom: 100%;
+            margin-bottom: 2px;
+            left: 0;
+        }
+
+         :host::content ul ul {
+            top: 0px;
+            left: 100%;
+        }
+
+         :host::content ul li {
+            position: relative;
+            text-align: left;
+            padding: 3px 30px 4px 10px;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+
+         :host::content ul li[data-divider] {
+            height: 1px;
+            margin: 3px 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: var(--divider-color);
+        }
+
+         :host::content ul li[data-sub]:after {
+            font-family: 'FontAwesome';
+            content: '\f105';
+            /* > */
+            /*content:'\f0da';*/
+            position: absolute;
+            right: 10px;
+            top: 4px;
+        }
+
+         :host::content ul li.active,
+         :host::content ul li:active {
+            background-color: #DEDEDE;
+        }
+
+         :host::content ul li:hover {
+            background-color: var(--dark-button-color);
+            color: var(--text-primary-color);
+        }
+
+         :host::content ul li[data-text]:hover {
+            background-color: inherit !important;
+            color: inherit !important;
+        }
+
+         :host::content ul li[data-divider]:hover {
+            background-color: var(--divider-color) !important;
+        }
+
+         :host::content>ul li:hover>ul {
+            display: block;
+        }
+        /**/
+        /* dark */
+        /**/
+
+         :host[dark] {
+            /*margin: 0 10px;*/
+            color: var(--text-primary-color);
+        }
+
+         :host[dark]::content>[data-button]:hover {
+            background-color: transparent;
+        }
+
+         :host[dark]::content>[data-button]:hover>* {
+            color: var(--accent-color);
+        }
+        /*:host::content > [data-menu] {
+            margin-top: 10px;
+            padding:5px;
+        }*/
+
+         :host[dark]::content ul {
+            background-color: var(--dark-primary-color);
+            color: var(--text-primary-color);
+            border-color: var(--default-primary-color);
+        }
+
+         :host[dark]::content ul li[data-divider] {
+            background-color: var(--default-primary-color);
+        }
+
+         :host[dark]::content ul li[data-divider]:hover {
+            background-color: var(--default-primary-color) !important;
+        }
+    </style>
+    <template>
+        <content select="[data-button]" on-click="handleShowMenu"></content>
+        <content select="[data-menu]"></content>
+    </template>
+
+    <script>
+        Polymer({
+            is: "elm-dropdown",
+            properties: {
+                button: {
+                    type: Object
+                },
+                menu: {
+                    type: Object
+                },
+                noMinWidth: {
+                    type: Boolean,
+                    value: false,
+                    reflectToAttribute: true
+                }
+            },
+            listeners: {
+                click: 'clickHandler'
+            },
+            ready: function() {
+                var me = this;
+                this.button = this.querySelector('[data-button]');
+                this.menu = this.querySelector('[data-menu]');
+
+                document.body.addEventListener('click', function(e) {
+                    if (!me.contains(e.target)) {
+                        me.hideMenu();
+                    }
+                });
+            },
+            clickHandler: function(e) {
+                // e.stopPropagation();
+                if (this.button != null) {
+                    this.handleShowMenu(e);
+                };
+                var noHideElFlag = this.menu.contains(e.target.closest("[data-nohide]"));
+                if (noHideElFlag == false) {
+                    if (this.menu.contains(e.target)) {
+                        this.async(function() {
+                            this.hideMenu();
+                        }, 100);
+                    }
+                }
+            },
+            handleShowMenu: function(e) {
+                this.toggleMenu();
+            },
+            toggleMenu: function() {
+                if (this.isMenuHidden()) {
+                    this.showMenu();
+                } else {
+                    this.hideMenu();
+                }
+            },
+            isMenuHidden: function() {
+                if (this.menu.style.display != "block") {
+                    return true;
+                } else {
+                    return false;
+                }
+            },
+            hideMenu: function() {
+                if (this.menu != null) {
+                    this.menu.style.display = "none";
+                } else {
+                    console.warn("No menu defined in dropdown element");
+                }
+            },
+            showMenu: function(x, y) {
+                this.menu.style.display = "block";
+                this._getPosition();
+                if (x != null && x != null) {
+                    this.menu.style.position = 'fixed';
+                    this.menu.style.top = y + 'px';
+                    this.menu.style.left = x + 'px';
+                } else {
+                    this.menu.style.position = '';
+                }
+            },
+            _getPosition: function() {
+                if (this.button != null && this.menu != null) {
+                    var bcrButton = this.button.getBoundingClientRect();
+                    var bcrMenu = this.menu.getBoundingClientRect();
+                    var windowHeight = window.innerHeight;
+                    var windowWidth = window.innerWidth;
+
+                    // this.menu.style.top = (bcrButton.bottom) + 'px';
+                    // this.menu.style.left = (bcrButton.left) + 'px';
+
+                    var t;
+                    var l;
+                    if ((bcrButton.bottom + bcrMenu.height) > window.innerHeight) {
+                        t = (bcrMenu.height - bcrButton.height) + 'px';
+                    }
+                    if ((bcrButton.right + bcrMenu.width) > window.innerWidth) {
+                        l = -(bcrMenu.width - bcrButton.width) + 'px';
+                    }
+                    this.menu.style.top = t;
+                    this.menu.style.left = l;
+                }
+            }
+        })
+    </script>
+</dom-module>

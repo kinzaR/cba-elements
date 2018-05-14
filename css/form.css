@@ -1,0 +1,134 @@
+/*
+
+    Form box
+
+    <div class="formbox">
+        <div class="formtitle">
+        </div>
+        <div class="formcontent">
+        </div>
+    </div>
+
+*/
+
+.elm-formbox {
+    border: 1px solid rgba(125, 125, 125, 0.4);
+    margin: 0 5px 10px 5px;
+    background-color: #FFFFFF;
+}
+
+.elm-formbox.elm-shdw {
+    box-shadow: 0px 0px 2px 0px rgba(0, 0, 0, 0.2);
+}
+
+.elm-formtitle {
+    padding: 6px 10px;
+    font-size: 16px;
+    color: #000;
+    background-color: #f5f5f5;
+}
+
+.elm-formtitle > * {
+    margin-left: 5px;
+}
+
+
+/*.elm-formtitle > .actions > * {
+    margin-left: 5px;
+    padding:1px 4px;
+    cursor: pointer;
+}
+
+.elm-formtitle > .actions > *[data-checked] {
+    background-color: #ddd;
+}
+
+.elm-formtitle > .actions > *:hover {
+    background-color: #ccc;
+}*/
+
+.elm-formcontent {
+    padding: 8px 10px;
+    border-top: 1px solid rgba(125, 125, 125, 0.3);
+}
+
+.elm-formbox.elm-fit {
+    margin: 0px;
+    border-width: 0;
+}
+
+.elm-formcontent.elm-fit {
+    padding: 0px;
+}
+
+
+/*
+
+    radio and checkbox
+
+    <label class="control">
+        <input type="checkbox">
+        <span>text</span>
+    </label>
+
+*/
+
+label.elm-control {
+    color: inherit;
+}
+
+label.elm-control > input[type=radio],
+label.elm-control > input[type=checkbox] {
+    display: none;
+}
+
+label.elm-control > input[type=radio] + span,
+label.elm-control > input[type=checkbox] + span {
+    display: block;
+    position: relative;
+    outline: 0;
+    box-sizing: border-box;
+    line-height: 21px;
+    padding: 0px 5px;
+    font-size: inherit;
+    font-family: inherit;
+    color: inherit;
+}
+
+label.elm-control > input[type=radio] + span:before,
+label.elm-control > input[type=checkbox] + span:before {
+    font-family: 'FontAwesome';
+    display: inline-block;
+    width: 20px;
+    position: relative;
+    top: 2px;
+    font-size: 18px;
+    color: #666;
+}
+
+label.elm-control > input[type=radio] + span:before {
+    content: '\f10c';
+}
+
+label.elm-control > input[type=radio]:checked + span:before {
+    content: '\f192';
+}
+
+label.elm-control > input[type=checkbox] + span:before {
+    content: '\f096';
+}
+
+label.elm-control > input[type=checkbox]:checked + span:before {
+    content: '\f046';
+}
+
+label.elm-control > input[type=radio]:disabled + span,
+label.elm-control > input[type=radio]:disabled + span:before {
+    color: rgba(125, 125, 125, 0.25);
+    !important;
+}
+
+input[type=text]:disabled {
+    color: rgba(125, 125, 125, 0.25);
+    !important;
+}

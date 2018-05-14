@@ -1,0 +1,128 @@
+<link rel="import" href="../../../polymer/polymer.html">
+<link rel="import" href="../../../iron-flex-layout/iron-flex-layout-classes.html">
+
+<dom-module id="elm-network-list-select">
+    <style is="custom-style" include="iron-flex iron-flex-reverse iron-flex-alignment iron-flex-factors iron-positioning">
+         :host {
+            display: block;
+            position: relative;
+            box-sizing: border-box;
+        }
+
+        .selbox {
+            box-sizing: border-box;
+            overflow-y: auto;
+            border: 1px solid var(--hover-color);
+        }
+
+        .selitem {
+            padding: 2px 5px;
+        }
+
+        .selitem[data-checked=true] {
+            background-color: #ddd;
+        }
+
+        textarea {
+            resize: none;
+        }
+    </style>
+    <template>
+        <div class="vertical layout">
+
+            <form class="horizontal layout">
+                <label class="elm-control">
+                    <input type="radio" name="mode" value="nodes" on-change="handleRadio" checked>
+                    <span>Network nodes</span>
+                </label>
+                <label class="elm-control">
+                    <input type="radio" name="mode" value="selection" on-change="handleRadio">
+                    <span>Network selection</span>
+                </label>
+            </form>
+
+            <div class="horizontal layout center">
+                <div>
+                    <label class="elm" style="margin-top: 5px;">Select attribute:</label>
+
+                    <elm-select-box style="height: 150px; width:200px;" id="columns" options="{{columns}}" on-select="handleBoxSelect">
+                    </elm-select-box>
+
+                </div>
+                <div class="elm-btn elm-btn-shdw" style="margin:5px;" on-click="handleApply">
+                    <i class="fa fa-arrow-right"></i>
+                </div>
+                <div style="margin-left: 3px;">
+                    <label class="elm" style="margin-top: 5px;">List:</label>
+                    <textarea id="textarea" class="elm" style="height:150px;width:200px;"></textarea>
+                </div>
+            </div>
+
+        </div>
+    </template>
+    <script>
+        Polymer({
+            is: "elm-network-list-select",
+            properties: {
+                textAreaValue: {
+                    type: String,
+                    notify: true,
+                    value: ''
+                },
+                columnSelected: {
+                    type: Object
+                },
+                columns: {
+                    type: Array
+                },
+                items: {
+                    type: Array
+                },
+                selected: {
+                    type: Array
+                },
+            },
+            ready: function() {
+                this.columnSelected = "id";
+                this.selectNodes = "nodes";
+            },
+            handleRadio: function(e) {
+                this.selectNodes = e.target.getAttribute("value");
+            },
+            handleBoxSelect: function(e) {
+                this.columnSelected = e.detail;
+            },
+            handleNodesList: function() {
+                this.selectedMode = 'nodes';
+                var value = '';
+                for (var i = 0; i < this.items.length; i++) {
+                    var attributes = this.items[i].attributes;
+                    value += attributes[this.$.columns.selected.name] + '\n';
+                }
+                this.$.textarea.value = value.trim();
+
+                this.textAreaValue = this.$.textarea.value;
+            },
+            handleSelectionList: function() {
+                this.selectedMode = 'selection';
+                var value = '';
+                for (var i = 0; i < this.selected.length; i++) {
+                    var attributes = this.selected[i].attributes;
+                    value += attributes[this.$.columns.selected.name] + '\n';
+                }
+                this.$.textarea.value = value.trim();
+
+                this.textAreaValue = this.$.textarea.value;
+            },
+            handleApply: function(e) {
+                if (this.columnSelected !== "") {
+                    if (this.selectNodes == "nodes") {
+                        this.handleNodesList();
+                    } else if (this.selectNodes == "selection") {
+                        this.handleSelectionList();
+                    }
+                }
+            }
+        });
+    </script>
+</dom-module>

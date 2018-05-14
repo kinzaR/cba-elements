@@ -1,0 +1,194 @@
+<link rel="import" href="../../polymer/polymer.html">
+<link rel="import" href="./elm-tooltip.html">
+<dom-module id="elm-cluster-status">
+    <template>
+        <style>
+             :host {
+                position: relative;
+                display: block;
+                box-sizing: border-box;
+            }
+
+            .status_danger {
+                --button-style-color: #bf4747;
+            }
+
+            i.status_danger {
+                color: #bf4747;
+            }
+
+            .status_warning {
+                --button-style-color: #bf9947;
+            }
+
+            i.status_warning {
+                color: #bf9947;
+            }
+
+            .status_ok {
+                --button-style-color: #65f45e;
+            }
+
+            i.status_ok {
+                color: #65f45e;
+            }
+
+            .status_default {
+                --button-style-color: #a8a8a8;
+                color: #a8a8a8;
+            }
+
+            ul {
+                list-style: none;
+                text-align: left;
+                min-width: 300px;
+                margin: 0;
+                padding: 0.5em 1em;
+            }
+
+            h1 {
+                font-size: 1.2em;
+                font-weight: bold;
+                text-align: center;
+            }
+
+            .cluster_data {
+                margin-left: 10px;
+                float: right;
+            }
+        </style>
+        <elm-tooltip icon="signal" type="{{type}}" class$="{{_computeStatusClass(_serverStatusObject)}}" on-tooltip-toggle="handleTooltipToogle">
+            <h1>Cluster Status</h1>
+            <ul>
+                <li><i class$="{{_computeSingleElementStatusClass(_serverStatusObject.cpuUsage, _statusThresholds.cpu_Mem)}} fa"></i> CPU: <span class="cluster_data">{{_computeNumber(_serverStatusObject.cpuUsage, 0)}} %</span></li>
+                <li><i class$="{{_computeSingleElementStatusClass(_serverStatusObject.memUsage, _statusThresholds.cpu_Mem)}} fa"></i> Memory Usage: <span class="cluster_data">{{_computeNumber(_serverStatusObject.memUsage, 0)}} %</span></li>
+                <li><i class="fa fa-globe"></i> Connexion Latency: <span class="cluster_data">{{_connexionLatency}} ms</span></li>
+                <hr>
+                <li>Jobs Running: <span class="cluster_data">{{_serverStatusObject.jobsRunning}}</span></li>
+                <li>Jobs Awaiting: <span class="cluster_data">{{_serverStatusObject.jobsWaiting}}</span></li>
+            </ul>
+        </elm-tooltip>
+    </template>
+
+    <script>
+        Polymer({
+            is: "elm-cluster-status",
+            properties: {
+                clusterApi: {
+                    type: String,
+                    value: function() {
+                        if (window.CBA_SERVER_HOST != null) {
+                            return CBA_SERVER_HOST + '/status';
+                        }
+                    }
+                },
+                _serverStatusObject: {
+                    type: JSON
+                },
+
+                _statusThresholds: {
+                    value: function() {
+                        return {
+                            cpu_Mem: {
+                                danger: 0.9,
+                                warning: 0.5
+                            },
+                            latency: {
+                                danger: 1000,
+                                warning: 500
+                            }
+                        }
+                    }
+                },
+
+                _connexionLatency: Number,
+                _interval: Number,
+
+                type: {
+                    type: String,
+                    reflectToAttribute: true,
+                    value: "default"
+                },
+            },
+            ready: function() {
+
+            },
+            attached: function() {
+                this.retrieveServerStatus(this.clusterApi);
+                this._interval = setInterval(function() {
+                    this.retrieveServerStatus(this.clusterApi);
+                }.bind(this), 5000);
+            },
+            handleTooltipToogle: function(e) {
+                // if (e.detail) {
+                //     this.retrieveServerStatus(this.clusterApi);
+                // } else {
+                //     clearInterval(this._interval);
+                // }
+            },
+            retrieveServerStatus: function(url) {
+                var me = this;
+                var startRequestTime = new Date();
+                url = url + "?rand=" + startRequestTime.getTime();
+                var oReq = new XMLHttpRequest();
+
+                function reqListener() {
+                    var jsonObject = JSON.parse(this.responseText);
+                    me.set('_serverStatusObject', jsonObject);
+                    me.set('_connexionLatency', new Date() - startRequestTime);
+                    // console.log(me._serverStatusObject);
+                }
+
+                oReq.open("GET", url);
+                oReq.send();
+
+                oReq.addEventListener("load", reqListener);
+                oReq.addEventListener("error", function() {
+                    console.error("Server currently unavailable at " + url);
+                    me.set('_serverStatusObject', null);
+                }.bind(this));
+            },
+
+            _computeStatusClass(serverStats) {
+                if (serverStats) {
+                    var newClass = "";
+                    if (this._checkStatusThreshold(serverStats, this._statusThresholds.cpu_Mem.danger)) {
+                        newClass = "status_danger";
+                    } else if (this._checkStatusThreshold(serverStats, this._statusThresholds.cpu_Mem.warning)) {
+                        newClass = "status_warning";
+                    } else {
+                        newClass = "status_ok";
+                    }
+                } else {
+                    newClass = "status_default";
+                }
+
+                this.async(function() {
+                    this.updateStyles(); // Necessary for the custom css variable to apply when update
+                }.bind(this), 10);
+
+                return newClass;
+
+            },
+
+            _checkStatusThreshold(serverStats, threshold) {
+                return serverStats.cpuUsage >= threshold || serverStats.memUsage >= threshold;
+            },
+
+            _computeNumber: function(number, digits) {
+                return (number * 100).toFixed(digits);
+            },
+
+            _computeSingleElementStatusClass(value, thresholds) {
+                if (value >= thresholds.danger) {
+                    return "status_danger fa-warning";
+                } else if (value >= thresholds.warning) {
+                    return "status_warning fa-warning";
+                } else if (value < thresholds.warning) {
+                    return "status_ok fa-check";
+                }
+                return "status_default fa-circle";
+            }
+        })
+    </script>
+</dom-module>

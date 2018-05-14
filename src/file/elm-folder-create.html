@@ -1,0 +1,82 @@
+<link rel="import" href="../../../polymer/polymer.html">
+<link rel="import" href="../../../iron-flex-layout/iron-flex-layout-classes.html">
+
+<dom-module id="elm-folder-create">
+    <style is="custom-style" include="iron-flex iron-flex-reverse iron-flex-alignment iron-flex-factors iron-positioning">
+        :host {
+            display: block;
+        }
+
+        .message {
+            margin-top: 5px;
+        }
+    </style>
+    <template>
+        <form id="form" class="vertical layout" on-keypress="handleFormKey">
+            <label class="elm"> Folder name</label>
+            <input class="elm" type="text" id="name" value="{{newFolderName::input}}" required pattern="[a-zA-Z0-9_-]+">
+            <br>
+
+            <div class="elm-btn elm-btn-shdw" on-click="handleForm">Create</div>
+            <br>
+        </form>
+        <div>{{message}}</div>
+    </template>
+</dom-module>
+<script>
+    Polymer({
+        is: 'elm-folder-create',
+        properties: {
+            folder: {
+                type: Object,
+                notify: true,
+                value: null
+            },
+            message: {
+                type: String,
+                value: ''
+            },
+            newFolderName: {
+                type: String,
+                value: ''
+            },
+        },
+        handleFormKey: function(e) {
+            if (e.which == 13) {
+                e.preventDefault();
+                this.handleForm();
+            }
+        },
+        handleForm: function(e) {
+            var me = this;
+            this.message = '';
+
+            if (this.$.form.checkValidity()) {
+                CbaManager.files.createFolder({
+                    id: this.folder._id,
+                    query: {
+                        name: this.newFolderName
+                            // folder: this.folder.path + this.newFolderName
+                    },
+                    request: {
+                        success: function(response) {
+                            if (response.response[0].error == null) {
+                                me.message = '';
+                                me.name = '';
+                                me.fire('need-refresh');
+                                me.fire('folder-created');
+                            } else {
+                                me.message = response.response[0].error;
+                            }
+                        },
+                        error: function() {
+                            alert('Server error, try again later.');
+                        }
+                    }
+                });
+            } else {
+                this.message = 'Only letters, numbers or slash(-,_) admitted';
+            }
+        }
+    });
+</script>

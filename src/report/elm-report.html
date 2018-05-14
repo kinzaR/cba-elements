@@ -1,0 +1,1378 @@
+<link rel="import" href="../../../polymer/polymer.html">
+<link rel="import" href="../../../iron-flex-layout/iron-flex-layout-classes.html">
+<link rel="import" href="../../../iron-flex-layout/iron-flex-layout.html">
+
+<script src="../../../network-viewer/conf/config.js"></script>
+<link rel="import" href="../../../network-viewer/network-viewer.html">
+<link rel="import" href="../../../pathway-viewer/pathway-viewer.html">
+<link rel="import" href="../../../pathway-viewer/pathway-drug-viewer.html">
+
+<dom-module id="elm-report">
+    <style is="custom-style" include="iron-flex iron-flex-reverse iron-flex-alignment iron-flex-factors iron-positioning">
+         :host {
+            display: block;
+            position: relative;
+            box-sizing: border-box;
+            background-color: #FFFFFF;
+            padding: 20px 40px;
+            /*@apply(--layout-horizontal);*/
+        }
+
+         :host[toc-fixed]>#outline {
+            position: fixed;
+            z-index: 1;
+        }
+
+        #outline {
+            /*position: fixed;*/
+            position: absolute;
+            box-sizing: border-box;
+            margin-top: 25px;
+            right: 40px;
+            min-width: 300px;
+            max-width: 300px;
+            background-color: white;
+            border: 1px solid var(--divider-color);
+            box-shadow: 0px 0px 4px 0px rgba(0, 0, 0, 0.2);
+            padding: 20px;
+        }
+
+        #up {
+            position: fixed;
+            box-sizing: border-box;
+            margin-top: -10px;
+            right: 20px;
+        }
+
+        .job-name,
+        .job-desc,
+        .job-tool {
+            margin-left: 40px;
+        }
+
+        .outline-line {
+            padding: 2px;
+            text-transform: capitalize;
+        }
+
+        .outline-line>i {
+            color: var(--accent-color);
+            margin-right: 5px;
+        }
+
+        .section:first-child {
+            margin: 0px 0 5px 0;
+        }
+
+        .section {
+            font-size: 30px;
+            font-weight: lighter;
+            margin: 30px 0 5px 0;
+            color: var(--secondary-text-color);
+            border-bottom: 1px solid var(--divider-color);
+        }
+
+        .download,
+        .param,
+        .image,
+        .table,
+        .boxplot,
+        .heatmap,
+        .proteinviewer,
+        .message,
+        .redirection {
+            font-size: 18px;
+            display: block;
+        }
+
+        .download>a:hover,
+        .image>a:hover,
+        .boxplot>a:hover,
+        .heatmap>a:hover,
+        .proteinviewer>a:hover,
+        .table>a:hover,
+        .redirection>a:hover {
+            text-decoration: underline;
+        }
+
+        .download>a,
+        .image>a,
+        .boxplot>a,
+        .heatmap>a,
+        .proteinviewer>a,
+        .table>a,
+        .redirection>a {
+            color: var(--secondary-text-color);
+            text-decoration: none;
+        }
+
+        .download>i,
+        .image>i,
+        .table>i,
+        .boxplot>i,
+        .heatmap>i,
+        .proteinviewer>i,
+        .message>i,
+        .redirection>i {
+            color: var(--accent-color);
+            margin-right: 10px;
+        }
+
+        .param>.key {
+            color: var(--secondary-text-color);
+            margin-right: 5px;
+        }
+
+        .param>.val {
+            color: var(--accent-color);
+        }
+
+        .image>img {
+            display: block;
+            margin-bottom: 30px;
+        }
+
+        .table>elm-table {
+            width: 1000px;
+            margin-top: 10px;
+            margin-bottom: 20px;
+            border: 1px solid var(--divider-color);
+            height: 380px;
+        }
+
+        .html {
+            color: var(--secondary-text-color);
+        }
+
+        .section>.name {
+            color: var(--accent-color);
+            margin-right: 10px;
+        }
+
+        .input-param {
+            margin-left: 40px;
+        }
+
+        .download-icon {
+            font-size: 10pt;
+            margin-left: 5px;
+            color: var(--accent-color);
+        }
+
+        .download-icon:hover {
+            cursor: pointer;
+        }
+
+        .download-icon:hover {
+            font-weight: bold;
+        }
+
+        .button {
+            background-color: var(--dark-button-color) !important;
+            color: var(--text-primary-color) !important;
+        }
+
+        .button:hover {
+            background-color: var(--light-button-color) !important;
+        }
+
+        #outlineBottomBar {
+            margin-top: 10px;
+        }
+
+        #outlineBottomBar>i {
+            padding-left: 7px;
+        }
+
+        .delete-job,
+        .download-job,
+        .relaunch-job {
+            cursor: pointer;
+        }
+
+        .delete-job:hover {
+            color: #b30000 !important;
+        }
+
+        .relaunch-job:hover {
+            color: #298c63 !important;
+        }
+
+        .download-job:hover {
+            color: #0068cc !important;
+        }
+
+        .redirection-btn {
+            margin: 10px;
+            max-width: 500px;
+        }
+
+        .redirection-file {
+            max-width: 300px;
+            color: #0068cc;
+        }
+
+        pathway-drug-viewer {
+            background-color: inherit;
+        }
+    </style>
+    <template>
+        <div id="outline" class="vertical layout">
+            <div id="outlineContent" class="vertical layout"></div>
+            <div id="outlineBottomBar" class="horizontal layout end-justified">
+                <i class="fa fa-download download-job" title="Download Job" on-click="handleDownloadJob"></i>
+                <i class="fa fa-trash-o delete-job" title="Delete Job" on-click="handleDeleteJob"></i>
+                <i hidden$="{{hideRelaunch}}" class="fa fa-refresh relaunch-job" title="Relaunch Job" on-click="handleRelaunchJob"></i>
+            </div>
+        </div>
+        <div id="up" on-click="handleUp" class="button elm-btn elm-btn-shdw" title="Go top"><i class="fa fa-arrow-up"></i></div>
+        <div>
+            <div id="jobInfo" class="section">Job Information</div>
+            <div style="margin-left:30px;">
+                <div class="param"><span class="key">Name:</span><span class="val">{{job.name}}</span></div>
+                <div class="param"><span class="key">Description:</span><span class="val">{{job.description}}</span></div>
+                <div class="param"><span class="key">Tool:</span><span class="val">{{job.tool}}</span></div>
+                <div class="param"><span class="key">Date:</span><span class="val">{{jobDate}}</span></div>
+            </div>
+            <div id="inputParamsHeader" class="section">Job Arguments</div>
+            <div id="inputParams" style="margin-left: 30px;"></div>
+            <br>
+        </div>
+        <!-- <div class="section">Results</div> -->
+        <div id="main"></div>
+    </template>
+    <script>
+        Polymer({
+            is: 'elm-report',
+            properties: {
+                job: {
+                    type: Object,
+                    observer: 'jobChanged'
+                },
+                fileNameMap: {
+                    type: Object
+                },
+                tocFixed: {
+                    type: Boolean,
+                    value: false,
+                    reflectToAttribute: true
+                },
+                hideRelaunch: {
+                    type: Boolean,
+                    value: false,
+                    reflectToAttribute: true
+                }
+            },
+            ready: function() {
+                this.count = 0;
+                this.iconMap = {
+                    download: 'fa-download',
+                    file: 'fa-file',
+                    message: 'fa-comment-o',
+                    image: 'fa-image',
+                    table: 'fa-table',
+                    boxplot: 'fa-bar-chart',
+                    redirection: 'fa-forward',
+                    goViewer: 'fa-share-alt',
+                    interactomeViewer: 'fa-share-alt',
+                    proteinviewer: 'fa-share-alt',
+                    networkMinerPlot: 'fa-bar-chart',
+                    heatmap: 'fa-bar-chart',
+
+                }
+            },
+            handleUp: function() {
+                this.scrollTop = 0;
+            },
+            refresh: function() {
+                if (this.job != null) {
+                    this.jobChanged(this.job);
+                }
+            },
+            jobChanged: function(neo, old) {
+                var me = this;
+                if (neo) {
+                    while (this.$.main.firstChild) {
+                        this.$.main.removeChild(this.$.main.firstChild);
+                    }
+                    while (this.$.outlineContent.firstChild) {
+                        this.$.outlineContent.removeChild(this.$.outlineContent.firstChild);
+                    }
+
+                    while (this.$.inputParams.firstChild) {
+                        this.$.inputParams.removeChild(this.$.inputParams.firstChild);
+                    }
+                    this.jobDate = new Date(Date.parse(me.job.createdAt)).toLocaleString();
+                    this.fileNameMap = {};
+
+                    var jobInfoElem = document.createElement('a');
+                    jobInfoElem.innerHTML = '<i class="fa fa-caret-right"></i><span>Job information</span>';
+                    jobInfoElem.style.fontWeight = "bold";
+                    jobInfoElem.href = "#jobInfo";
+                    jobInfoElem.classList.add('outline-line');
+                    Polymer.dom(this.$.outlineContent).appendChild(jobInfoElem);
+
+                    var inputParamsElem = document.createElement('a');
+                    inputParamsElem.innerHTML = '<i class="fa fa-caret-right"></i><span>Job Arguments</span>';
+                    inputParamsElem.style.fontWeight = "bold";
+                    inputParamsElem.href = "#inputParamsHeader";
+                    inputParamsElem.classList.add('outline-line');
+                    Polymer.dom(this.$.outlineContent).appendChild(inputParamsElem);
+
+                    var files = [];
+                    CbaManager.getPlainFolderFiles(me.job.folder._id, function(files) {
+                        me._createFilePathMap(files);
+                        me.processResultFiles();
+                    });
+                }
+            },
+            _createFilePathMap: function(files) {
+                this.fileNameMap = {};
+                var jobRelativePath;
+                for (var i = 0; i < files.length; i++) {
+                    var f = files[i];
+                    if (this.job.folder._id != f._id) {
+                        jobRelativePath = f.path.replace(this.job.folder.path + '/', '');
+                        this.fileNameMap[jobRelativePath] = f;
+                    }
+                }
+            },
+            getFileFromName: function(name) {
+                var file = this.fileNameMap[name];
+                if (file != null) {
+                    return file;
+                } else {
+                    /* Old versions compatibility */
+                    for (var key in this.fileNameMap) {
+                        if (key == 'report/' + name) {
+                            return this.fileNameMap[key];
+                        }
+                    }
+                }
+            },
+            processResultFiles: function() {
+                var me = this;
+                CbaManager.getFileContent(this.getFileFromName('report.xml')._id, function(content) {
+                    console.log(content);
+                    me.processReportFile(content);
+                });
+            },
+            processReportFile: function(fileContent) {
+                var parser = new DOMParser();
+                var reportXML = parser.parseFromString(fileContent, "text/xml");
+
+                var inputParamsEl = reportXML.querySelector('input-params');
+                var inputParams = inputParamsEl.childNodes;
+                var outputParamsEl = reportXML.querySelector('output-params');
+                var outputParams = outputParamsEl.childNodes;
+
+                if (inputParams.length == 0 || (inputParams.length == 1 && inputParams[0].textContent.trim() == "")) {
+                    this.$.inputParamsHeader.hidden = true;
+                } else {
+                    this._processParams(reportXML, inputParams, this.$.inputParams);
+                }
+
+                this._processParams(reportXML, outputParams, this.$.main);
+
+            },
+            _processParams: function(reportXML, params, renderEl) {
+                for (var i = 0; i < params.length; i++) {
+                    var outEl = params[i];
+                    if (outEl.tagName != null) {
+                        var functionPath = '_' + outEl.tagName + 'Tag';
+                        if (this[functionPath] != null) {
+                            var name = outEl.getAttribute('file');
+                            if (name != null && this.getFileFromName(name) == null) {
+                                console.log('####### File : ' + name + ' not found !');
+                                //transform to param;
+                                var newOutEl = reportXML.createElement('param');
+                                newOutEl.setAttribute('key', outEl.getAttribute('title'));
+                                newOutEl.setAttribute('value', outEl.getAttribute('file'));
+                                functionPath = '_' + newOutEl.tagName + 'Tag';
+                                outEl = newOutEl;
+                            }
+                            var el = this[functionPath](outEl, renderEl);
+                            this._addTag(el, outEl, renderEl);
+                        } else {
+                            console.log('* ' + outEl.tagName + ' * tag function renderer is not defined');
+                        }
+                    }
+                }
+
+            },
+            _addTag: function(el, outEl, renderEl) {
+                el.setAttribute("id", "elmReportId_" + this.count);
+                el.classList.add(outEl.tagName);
+
+                var level = parseInt(outEl.getAttribute("level"));
+                level = (isNaN(level)) ? 0 : level;
+                el.style.marginLeft = level * 40 + "px";
+                Polymer.dom(renderEl).appendChild(el);
+                this._addOutlineEntry(outEl, "elmReportId_" + this.count);
+                this.count++;
+            },
+            _addOutlineEntry: function(outEl, id) {
+                var title = outEl.getAttribute('title');
+                if (title != null) {
+                    var el = document.createElement('a');
+                    var level = parseInt(outEl.getAttribute("level"));
+                    level = (isNaN(level)) ? 0 : level;
+                    var i = document.createElement('i');
+                    switch (outEl.tagName) {
+                        case 'image':
+                            i.classList.add("fa", this.iconMap['image']);
+                            el.style.marginLeft = (10 + (level * 10)) + "px";
+                            break;
+                        case 'table':
+                            i.classList.add("fa", this.iconMap['table']);
+                            el.style.marginLeft = (10 + (level * 10)) + "px";
+                            break;
+                        case 'boxplot':
+                            i.classList.add("fa", this.iconMap['boxplot']);
+                            el.style.marginLeft = (10 + (level * 10)) + "px";
+                            break;
+                        case 'download':
+                            i.classList.add("fa", this.iconMap['download']);
+                            el.style.marginLeft = (10 + (level * 10)) + "px";
+                            break;
+                        case 'message':
+                            i.classList.add("fa", this.iconMap['message']);
+                            el.style.marginLeft = (10 + (level * 10)) + "px";
+                            break;
+                        case 'redirection':
+                            i.classList.add("fa", this.iconMap['redirection']);
+                            el.style.marginLeft = (10 + (level * 10)) + "px";
+                            break;
+                        case 'goViewer':
+                            i.classList.add("fa", this.iconMap['goViewer']);
+                            el.style.marginLeft = (10 + (level * 10)) + "px";
+                            break;
+                        case 'networkMinerPlot':
+                            i.classList.add("fa", this.iconMap['networkMinerPlot']);
+                            el.style.marginLeft = (10 + (level * 10)) + "px";
+                            break;
+                        case 'interactomeViewer':
+                            i.classList.add("fa", this.iconMap['interactomeViewer']);
+                            el.style.marginLeft = (10 + (level * 10)) + "px";
+                            break;
+                        case 'proteinviewer':
+                            i.classList.add("fa", this.iconMap['proteinviewer']);
+                            el.style.marginLeft = (10 + (level * 10)) + "px";
+                            break;
+                        case 'heatmap':
+                            i.classList.add("fa", this.iconMap['heatmap']);
+                            el.style.marginLeft = (10 + (level * 10)) + "px";
+                            break;
+                        case 'section':
+                            el.style.fontWeight = "bold";
+                            el.style.marginLeft = level * 10 + "px";
+                            i.classList.add("fa", 'fa-caret-right');
+                            break;
+                        default:
+                    }
+
+                    var text = document.createElement('span');
+                    text.innerHTML = title;
+
+                    el.appendChild(i);
+                    el.appendChild(text);
+                    // el.innerHTML = title;
+                    el.href = "#" + id;
+
+                    el.classList.add('outline-line');
+                    Polymer.dom(this.$.outlineContent).appendChild(el);
+                }
+            },
+            _sectionTag: function(outEl) {
+                var el = document.createElement('div');
+                el.innerHTML = outEl.getAttribute('title');
+                return el;
+            },
+
+            _downloadTag: function(outEl) {
+                var name = outEl.getAttribute('file');
+                var el = document.createElement('div');
+
+                var i = document.createElement('i');
+                i.classList.add('fa', this.iconMap['file']);
+
+                var a = document.createElement('a');
+                a.innerHTML = outEl.getAttribute('title');
+                a.appendChild(this._createDownloadIcon());
+                a.setAttribute('href', CbaManager.getFileURL(this.getFileFromName(name)._id));
+
+                el.appendChild(i);
+                el.appendChild(a);
+                return el;
+            },
+            _redirectionTag: function(outEl) {
+                var me = this;
+                var tool = outEl.getAttribute('tool');
+
+                outEl.setAttribute("title", elm.utils.titleCase(tool));
+                var el = document.createElement('div');
+                el.classList.add("elm-btn", "elm-btn-shdw", "redirection-btn")
+
+                var i = document.createElement('i');
+                i.classList.add('fa', this.iconMap['redirection']);
+
+                var text = document.createElement('span');
+                text.innerHTML = "Send <span class=\"redirection-file\">" + outEl.getAttribute("file") + "</span> to " + tool;
+
+                el.appendChild(i);
+                el.appendChild(text);
+
+                el.addEventListener('click', function(e) {
+                    var elem = outEl;
+                    var args = {};
+                    var tool = "";
+
+                    for (var i = 0; i < elem.attributes.length; i++) {
+                        var attr = elem.attributes[i];
+                        if (attr.name == "tool") {
+                            tool = attr.value
+                        } else if (attr.name == "level" || attr.name == "title") {
+                            continue;
+                        } else {
+                            args[attr.name] = attr.value;
+                        }
+                    }
+
+                    me.fire('redirection', {
+                        tool: tool,
+                        job: me.job,
+                        args: args
+                    });
+                })
+
+                return el;
+            },
+            _paramTag: function(outEl) {
+                // <param key='Decomposed paths' value='FALSE'></param>
+                var el = document.createElement('div');
+
+                var keyEl = document.createElement('span');
+                keyEl.classList.add('key');
+                keyEl.innerHTML = outEl.getAttribute('key') + ':';
+
+                var valEl = document.createElement('span');
+                valEl.classList.add('val');
+                valEl.innerHTML = outEl.getAttribute('value');
+
+                el.appendChild(keyEl);
+                el.appendChild(valEl);
+                // this._addTag(el, outEl);
+                return el;
+            },
+            _messageTag: function(outEl) {
+                // <message text='...'></message>
+                var el = document.createElement('div');
+
+                var i = document.createElement('i');
+                i.classList.add('fa', this.iconMap['message']);
+
+                var span = document.createElement('span');
+                span.innerHTML = outEl.getAttribute('text');
+
+                el.appendChild(i);
+                el.appendChild(span);
+
+                // this._addTag(el, outEl);
+                return el;
+            },
+            _imageTag: function(outEl) {
+                // <image title='Heatmap' file='paths_heatmap.png'></image>
+                var name = outEl.getAttribute('file');
+                var el = document.createElement('div');
+
+                var i = document.createElement('i');
+                i.classList.add('fa', this.iconMap['image']);
+
+                var a = document.createElement('a');
+                a.innerHTML = outEl.getAttribute('title');
+                a.appendChild(this._createDownloadIcon());
+
+                a.setAttribute('href', CbaManager.getFileURL(this.getFileFromName(name)._id));
+
+                var img = document.createElement('img');
+                img.setAttribute('src', CbaManager.getFileURL(this.getFileFromName(name)._id));
+                var width = outEl.getAttribute('width');
+                var height = outEl.getAttribute('height');
+                var reg = new RegExp('^[0-9]+$');
+                if (reg.test(width)) {
+                    img.setAttribute('width', width);
+                }
+                if (reg.test(height)) {
+                    img.setAttribute('height', height);
+                }
+
+                el.appendChild(i);
+                el.appendChild(a);
+                el.appendChild(img);
+                // this._addTag(el, outEl);
+                return el;
+            },
+            _boxplotTag: function(outEl) {
+                var me = this;
+
+                var name = outEl.getAttribute('file');
+                var outliers = outEl.getAttribute('outliers');
+                var el = document.createElement('div');
+
+                var i = document.createElement('i');
+                i.classList.add('fa', this.iconMap['boxplot']);
+
+                var a = document.createElement('a');
+                a.innerHTML = outEl.getAttribute('title');
+                a.appendChild(this._createDownloadIcon());
+
+                var chartDiv = document.createElement("div");
+
+                CbaManager.getFileContent(me.getFileFromName(name)._id, function(content) {
+
+                    var data = me._parseBoxPlotData(content);
+
+                    if (outliers) {
+                        CbaManager.getFileContent(me.getFileFromName(outliers)._id, function(content) {
+
+                            var outliersData = me._parseOutliers(content);
+                            if (outliers.length > 0) {
+                                data.outliers = outliersData;
+                            }
+                            me._createBoxPlotChart(chartDiv, outEl.getAttribute('title'), data);
+                        });
+                    } else {
+                        data.outliers = [];
+                        me._createBoxPlotChart(chartDiv, outEl.getAttribute('title'), data);
+                    }
+
+                });
+
+                var exportBoxPlot = function(e) {
+                    var chartElem = chartDiv;
+                    var chart = Highcharts.charts[chartElem.dataset["highchartsChart"]];
+                    chart.exportChart();
+                }
+
+                i.addEventListener('click', exportBoxPlot);
+                a.addEventListener('click', exportBoxPlot);
+
+                el.appendChild(i);
+                el.appendChild(a);
+                el.appendChild(chartDiv);
+
+                return el;
+            },
+            _heatmapTag: function(outEl) {
+                var me = this;
+
+                var name = outEl.getAttribute('file');
+                var el = document.createElement('div');
+
+                var i = document.createElement('i');
+                i.classList.add('fa', this.iconMap['heatmap']);
+
+                var a = document.createElement('a');
+                a.innerHTML = outEl.getAttribute('title');
+                a.appendChild(this._createDownloadIcon());
+
+                var chartDiv = document.createElement("div");
+
+                CbaManager.getFileContent(me.getFileFromName(name)._id, function(content) {
+
+                    var data = me._parseHeatMapData(content);
+                    me._createHeatMap(data, chartDiv);
+                });
+
+                var exportHeatMap = function(e) {
+                    var chartElem = chartDiv;
+                    var chart = Highcharts.charts[chartElem.dataset["highchartsChart"]];
+                    chart.exportChart();
+                }
+
+                i.addEventListener('click', exportHeatMap);
+                a.addEventListener('click', exportHeatMap);
+
+                el.appendChild(i);
+                el.appendChild(a);
+                el.appendChild(chartDiv);
+
+                return el;
+            },
+            _createHeatMap: function(elem, div) {
+                var data = elem.data;
+                var cols = elem.cols;
+                var rows = elem.rowNames;
+
+                var height = 200;
+                height = height + rows.length * 15;
+
+                var width = cols.length * 15;
+                if (width < 500) {
+                    width = 500;
+                }
+                var heatMap = new Highcharts.Chart({
+                    chart: {
+                        renderTo: div,
+                        type: 'heatmap',
+
+                        height: height,
+                        width: width
+                    },
+                    title: {
+                        text: 'Heat Map'
+                    },
+
+                    xAxis: {
+                        categories: cols,
+                        opposite: true,
+                        labels: {
+                            rotation: -90
+                        }
+
+                    },
+                    yAxis: {
+                        categories: rows
+
+                    },
+                    colorAxis: {
+                        minColor: '#0000ff',
+                        maxColor: '#ff0000',
+                        stops: [
+                            [0, '#0000ff'],
+                            [0.5, '#ffffff'],
+                            [1, '#ff0000']
+                        ],
+                        min: 0,
+                        max: 1
+
+                    },
+                    exporting: {
+                        buttons: {
+                            contextButton: {
+                                text: 'Download'
+                            }
+                        }
+                    },
+                    plotOptions: {
+                        heatmap: {
+                            turboThreshold: data.length + 1
+                        }
+                    },
+                    tooltip: {
+                        formatter: function() {
+                            return '<b>Row:</b> ' + this.series.yAxis.categories[this.point.y] + '<br><b>' +
+                                '<b>Column:</b> ' + this.series.xAxis.categories[this.point.x] + '<br><b>' +
+                                '<b>Value:</b> ' + this.point.value + '<b>';
+                        }
+                    },
+
+                    series: [{
+                        name: 'DATA',
+                        borderWidth: 1,
+                        borderWidth: 1,
+                        data: data
+                    }]
+
+                });
+            },
+            _parseHeatMapData: function(content) {
+                var cols = [];
+                var data = [];
+                var rows = [];
+                var dataIdx = 1;
+                var rowNames = [];
+
+                var rawData = content.split("\n");
+                var prevLine = null;
+
+                var b = true;
+
+                /** Hack needed for sorting**/
+                var rawDataObj = {};
+                for (var i = 0; i < rawData.length; i++) {
+                    var line = rawData[i];
+                    if (line == "") continue;
+                    if (line.indexOf("#") < 0) {
+                        line = line.split("\t");
+                        rawDataObj[line[0].toString()] = line;
+                        rowNames.push(line[0].toString());
+                        if (b) { // PrevLine == last line of the header
+                            var splits = prevLine.split("\t");
+                            for (var j = 1; j < splits.length; j++) {
+                                cols.push(splits[j]);
+                            }
+                            b = false;
+                        }
+                    }
+                    prevLine = line;
+                }
+                var orderedContent = [];
+                for (var i = 0; i < rowNames.length; i++) {
+                    orderedContent.push(rawDataObj[rowNames[i]]);
+                }
+                /** end sorting **/
+
+                var numberRows = rowNames.length;
+                for (var i = 0; i < orderedContent.length; i++) {
+                    //                    console.log(i)
+                    //                    console.log(orderedContent[i])
+                    var lineData = orderedContent[i];
+                    lineData = lineData.slice(1, lineData.length).map(Number);
+                    var max = Math.max.apply(Math, lineData)
+                    var min = Math.min.apply(Math, lineData)
+                    for (var j = 0; j < lineData.length; j++) {
+                        var value = (lineData[j] - min) / (max - min);
+                        //                        value = lineData[j];
+                        data.push([j, numberRows - dataIdx, value]);
+                        //                        data.push([j, i, value]);
+
+                    }
+                    dataIdx++;
+
+                }
+                // this.createHeatMap(data, cols, this.rowNames.reverse());
+                return {
+                    data: data,
+                    cols: cols,
+                    rowNames: rowNames.reverse()
+                };
+
+            },
+            _createBoxPlotChart: function(chartDiv, title, data) {
+                var me = this;
+                var chart = new Highcharts.Chart({
+                    chart: {
+                        type: 'boxplot',
+                        renderTo: chartDiv,
+                        width: 700,
+                        height: 500,
+                        zoomType: "xy"
+                    },
+                    title: {
+                        text: 'Box Plot'
+                    },
+                    subtitle: {
+                        text: document.ontouchstart === undefined ?
+                            'Click and drag in the plot area to zoom in' : 'Pinch the chart to zoom in'
+                    },
+                    legend: {
+                        enabled: false
+                    },
+                    xAxis: {
+                        categories: data.keys,
+                        title: {
+                            text: title
+                        }
+                    },
+                    yAxis: {},
+                    series: [{
+                            name: 'Observations',
+                            data: data.data
+                            // tooltip: {
+                            // headerFormat: '<em>Experiment No {point.key}</em><br/>'
+                            // }
+                        }, {
+                            name: 'Outlier',
+                            color: Highcharts.getOptions().colors[0],
+                            type: 'scatter',
+
+                            data: data.outliers,
+                            marker: {
+                                fillColor: 'white',
+                                lineWidth: 1,
+                                radius: 1,
+                                lineColor: Highcharts.getOptions().colors[0]
+                            },
+                            tooltip: {
+                                pointFormat: 'Observation: {point.y}'
+                            }
+                        }
+
+                    ]
+
+                });
+            },
+            _parseBoxPlotData: function(content) {
+
+                var lines = content.split('\n');
+                if (lines.length > 0) {
+                    var line, data = [],
+                        obj, keys = [],
+                        row = [],
+                        outliers = [];
+
+                    var firstLine = lines[0].replace('#', '');
+                    fields = firstLine.split('\t');
+                    for (var i = 1; i < fields.length; i++) {
+                        field = fields[i].trim();
+                        keys.push(field);
+
+                    }
+                    for (var i = 1; i < lines.length; i++) {
+                        if (lines[i] == undefined || lines[i] == "") {
+                            continue;
+                        }
+                        line = lines[i].split("\t");
+
+                        row = [];
+                        for (var j = 1; j < line.length; j++) {
+                            row.push(parseFloat(line[j]));
+                        }
+                        data.push(row);
+                    }
+
+                    var transposedData = Object.keys(data[0]).map(function(c) {
+                        return data.map(function(r) {
+                            return r[c];
+                        });
+                    });
+
+                    return {
+                        data: transposedData,
+                        keys: keys,
+                        outliers: []
+                    };
+                }
+
+            },
+
+            _parseOutliers: function(content) {
+                var lines = content.split('\n');
+                var outliers = [];
+                if (lines.length > 0) {
+                    for (var i = 0; i < lines.length; i++) {
+                        var line = lines[i];
+                        if (line != undefined && line != "") {
+                            var splits = line.split("\t");
+                            outliers.push([parseFloat(splits[0]) - 1, parseFloat(splits[1])]);
+                        }
+
+                    }
+                }
+                return outliers;
+            },
+            _tableTag: function(outEl) {
+                var me = this;
+                // <table title='Path significance' file='paths_comparison.txt'  page-size='10'></table>
+                var name = outEl.getAttribute('file');
+
+                var el = document.createElement('div');
+                var i = document.createElement('i');
+                i.classList.add('fa', this.iconMap['table']);
+
+                var a = document.createElement('a');
+                a.innerHTML = outEl.getAttribute('title');
+                a.appendChild(this._createDownloadIcon());
+                a.setAttribute('href', CbaManager.getFileURL(this.getFileFromName(name)._id));
+
+                var table = document.createElement('elm-table');
+                table.setAttribute('enable-paging', '');
+                table.setAttribute('page-size', outEl.getAttribute('page-size'));
+
+                CbaManager.getFileContent(this.getFileFromName(name)._id, function(content) {
+                    var parsedContent = me._parseTabularFile(content);
+                    table.set('data', parsedContent.data);
+                    table.set('columns', parsedContent.columns);
+                });
+
+                el.appendChild(i);
+                el.appendChild(a);
+                el.appendChild(table);
+                // this._addTag(el, outEl);
+                return el;
+            },
+            _pathwayViewerTag: function(outEl) {
+                var el = document.createElement('div');
+
+                var pv = document.createElement('pathway-viewer');
+                var minHeight = 700;
+                var height = Math.max((window.innerHeight - 120), minHeight);
+                pv.style.height = height + 'px';
+
+                var nodeAttrs = ['labelSize', 'opacity', 'shape', 'color', 'strokeColor', 'size', 'strokeSize'];
+                var edgeAttrs = ['labelSize', 'opacity', 'shaft', 'shape', 'bidirectional', 'color', 'size'];
+                var nodeAttrMap = {};
+                var edgeAttrMap = {};
+                for (var i = 0; i < nodeAttrs.length; i++) {
+                    var att = nodeAttrs[i];
+                    var outColName = outEl.getAttribute('n-' + att);
+                    if (outColName != null) {
+                        nodeAttrMap[att] = outColName;
+                    }
+                }
+                for (var i = 0; i < edgeAttrs.length; i++) {
+                    var att = edgeAttrs[i];
+                    var outColName = outEl.getAttribute('e-' + att);
+                    if (outColName != null) {
+                        edgeAttrMap[att] = outColName;
+                    }
+                }
+
+                if (this.job.tool === 'hipathia') {
+                    pv.set('showHipathiaLegend', true);
+                }
+                if (this.job.tool == 'metabolizer') {
+                    pv.set('categoryLabel', 'Pathways');
+                    pv.set('circuitLabel', 'Modules');
+                }
+                /*Backward fix*/
+                nodeAttrMap = {
+                    'strokeColor': 'exp',
+                    'color': 'diff.exp',
+                    'size': 'width'
+                }
+                edgeAttrMap = {
+                    'shape': 'head'
+                }
+                pv.nodeAttributeMapping = nodeAttrMap;
+                pv.edgeAttributeMapping = edgeAttrMap;
+
+                pv.set('hideAltered', true);
+                pv.set('sessionFileNameMap', this.fileNameMap);
+                pv.set('path', outEl.getAttribute('path'));
+                pv.set('pathType', outEl.getAttribute('path-type'));
+
+                // pw.style.border = "1px solid #d3d3d3";
+                // pw.style.boxShadow = "0px 0px 4px 0px rgba(0, 0, 0, 0.2)";
+
+                el.appendChild(pv);
+                // this._addTag(el, outEl);
+                return el;
+            },
+            _pathwayDrugViewerTag: function(outEl) {
+                var me = this;
+                var tool = outEl.getAttribute('tool');
+
+                var el = document.createElement('div');
+                var pdv = document.createElement('pathway-drug-viewer');
+                var minHeight = 700;
+                var height = Math.max((window.innerHeight - 120), minHeight);
+                pdv.style.height = height + 'px';
+                pdv.set('hideBackButton', true);
+                pdv.set('path', outEl.getAttribute('path'));
+                pdv.set('initPath', outEl.getAttribute('path') + '_init');
+                pdv.set('validGenesFileName', outEl.getAttribute('valid-genes-file-name'));
+
+                var updateArgs = {
+                    tool: outEl.getAttribute('tool'),
+                    execution: outEl.getAttribute('update-execution'),
+                    executable: outEl.getAttribute('update-executable'),
+                };
+                var outParam = outEl.getAttribute('out-param');
+                if (outParam != null) {
+                    updateArgs.options = {};
+                    updateArgs.options[outParam] = {
+                        out: true
+                    }
+                }
+                pdv.set('jobUpdateArgs', updateArgs);
+                pdv.set('jobClearArgs', {
+                    tool: outEl.getAttribute('tool'),
+                    execution: outEl.getAttribute('clear-execution'),
+                    executable: outEl.getAttribute('clear-executable')
+                });
+                pdv.$.pathwayViewer.set('hideAltered', false);
+                pdv.set('jobFolder', this.job.folder);
+
+                if (this.job.tool == 'metabolizer' && tool == 'metabolizer') {
+                    updateArgs.options['species'] = this.job.options.species;
+                    updateArgs.options['exp_file'] = this.job.options.exp_file;
+                    updateArgs.options['design_file'] = this.job.options.design_file;
+                    if (this.job.options.sample) {
+                        updateArgs.options['sample'] = this.job.options.sample;
+                    }
+                    if (this.job.options.simple) {
+                        updateArgs.options['simple'] = this.job.options.simple;
+                    }
+                    pdv.set('foldChange', 1);
+                    pdv.set('categoryLabel', 'Pathways');
+                    pdv.set('circuitLabel', 'Modules');
+                    pdv.addEventListener('job-clear', function(e) {
+                        me.refresh();
+                    });
+                    pdv.addEventListener('job-update', function(e) {
+                        me.refresh();
+                    });
+                }
+
+                // pw.style.border = "1px solid #d3d3d3";
+                // pw.style.boxShadow = "0px 0px 4px 0px rgba(0, 0, 0, 0.2)";
+
+                el.appendChild(pdv);
+                return el;
+            },
+            _goViewerTag: function(outEl) {
+
+                var el = document.createElement('div');
+
+                var a = document.createElement('a');
+                a.innerHTML = outEl.getAttribute('title');
+                // a.appendChild(this._createDownloadIcon());
+                // a.setAttribute('href', CbaManager.getFileURL(this.getFileFromName(name)._id));
+
+                var gw = document.createElement('babelomics-go-viewer');
+                gw.style.height = '800px';
+
+                gw.set('subNetwork', outEl.getAttribute('sub-network'));
+                gw.set('subAttributes', outEl.getAttribute('sub-attributes'));
+                gw.set('all-attributes', outEl.getAttribute('all-attributes'));
+                gw.set('sessionFileNameMap', this.fileNameMap);
+
+                el.appendChild(a);
+                el.appendChild(gw);
+                return el;
+            },
+            _interactomeViewerTag: function(outEl) {
+                var el = document.createElement('div');
+
+                var iw = document.createElement('babelomics-interactome-viewer');
+                iw.style.height = '800px';
+
+                iw.set('network', outEl.getAttribute('network'));
+                iw.set('intermediates', outEl.getAttribute('intermediates'));
+                iw.set('seeds', outEl.getAttribute('seeds'));
+                iw.set('sessionFileNameMap', this.fileNameMap);
+
+                el.appendChild(iw);
+                return el;
+            },
+            _proteinviewerTag: function(outEl) {
+                var me = this;
+                var el = document.createElement('div');
+
+                var name = outEl.getAttribute('file');
+
+                var i = document.createElement('i');
+                i.classList.add('fa', this.iconMap['proteinviewer']);
+
+                var a = document.createElement('a');
+                a.innerHTML = outEl.getAttribute('title');
+                // a.setAttribute('href', CbaManager.getFileURL(this.getFileFromName(name)._id));
+
+                var proteinViewer = document.createElement('babelomics-protein-viewer');
+                proteinViewer.style.height = '800px';
+
+                CbaManager.getFileContent(this.getFileFromName(name)._id, function(content) {
+                    var nodes = me._parseProteinNodes(content);
+                    // proteinViewer.set('speciesSelection', "hsapiens");
+                    // proteinViewer.set('nodeSelection', false);
+                    proteinViewer.set('nodes', nodes);
+                });
+
+                el.appendChild(i);
+                el.appendChild(a);
+                el.appendChild(proteinViewer);
+                return el;
+            },
+            _parseProteinNodes: function(content) {
+                var lines = content.split('\n');
+                var line, fields, field, data = [];
+                if (lines.length > 0) {
+
+                    for (var i = 1; i < lines.length; i++) {
+                        line = lines[i];
+                        if (line != '' && line.charAt(0) != '#') {
+                            fields = line.split('\t');
+                            data.push(fields[0]);
+                        }
+                    }
+                }
+                return data;
+            },
+            _networkMinerPlotTag: function(outEl) {
+                var el = document.createElement('div');
+
+                var plotEl = document.createElement('babelomics-network-miner-plot');
+                plotEl.set('file', outEl.getAttribute('file'));
+                plotEl.set('sessionFileNameMap', this.fileNameMap);
+
+                el.appendChild(plotEl);
+                return el;
+            },
+
+            _htmlTag: function(outEl) {
+                var me = this;
+                var name = outEl.getAttribute('file');
+                var el = document.createElement('div');
+                CbaManager.getFileContent(this.getFileFromName(name)._id, function(content) {
+                    var parser = new DOMParser();
+                    var doc = parser.parseFromString(content, "text/html");
+                    me._processHTML(doc, el);
+                });
+                // this._addTag(el, outEl);
+                return el;
+            },
+            _processHTML: function(doc, outEl) {
+                var indexStyle = doc.querySelector('style');
+                var indexScript = doc.querySelector('script[data-var]');
+                var contextVar = indexScript.dataset.var;
+                var content = doc.querySelector('#content');
+
+                /*fix index-body*/
+                var els = content.querySelectorAll('.pathway_selector_item');
+                for (var i = 0; i < els.length; i++) {
+                    var el = els[i];
+                    el.removeAttribute('onclick');
+                    el.setAttribute('on-click', 'handlePathwayClick');
+                }
+                var els = content.querySelectorAll('img');
+                for (var i = 0; i < els.length; i++) {
+                    var el = els[i];
+                    var split = el.getAttribute('src').split('/');
+                    var name = split[split.length - 1];
+                    el.setAttribute('src', CbaManager.getFileURL(this.getFileFromName(name)._id));
+                }
+
+                var scriptTextContent = indexScript.textContent;
+                scriptTextContent = scriptTextContent.replace('pathSelector.appendChild(div)', 'Polymer.dom(pathSelector).appendChild(div)');
+                eval(scriptTextContent);
+                var obj = eval(contextVar);
+
+                /* Create custom element */
+                var domModule = document.createElement('dom-module');
+                var style = document.createElement('style');
+                style.textContent = indexStyle.textContent;
+                var template = document.createElement('template');
+                template.innerHTML = content.innerHTML;
+                domModule.appendChild(style);
+                domModule.appendChild(template);
+
+                var rndstr = Math.floor(Math.random() * (1000 - 9999 + 1)) + 1000;
+                var elname = 'elm-hipathia-result-gen' + rndstr;
+                domModule.register(elname);
+
+                var moduleConfig = {
+                    is: elname,
+                    ready: function() {
+                        var me = this;
+                        this.init(Polymer.dom(this.root));
+                    },
+                    handlePathwayClick: function(e) {
+                        this.loadPathway(e.currentTarget.dataset.pathway, e.currentTarget.dataset.pathwayname, Polymer.dom(this.root));
+                    }
+                }
+                for (var prop in obj) {
+                    if (hasOwnProperty.call(obj, prop)) {
+                        moduleConfig[prop] = obj[prop];
+                    }
+                }
+
+                Polymer(moduleConfig);
+                var res = document.createElement(elname);
+                outEl.appendChild(res);
+            },
+            _createDownloadIcon: function() {
+                var icon = document.createElement('i');
+                icon.classList.add('fa', 'download-icon', this.iconMap['download']);
+
+                return icon;
+            },
+            _createReportHTMLElement: function() {
+
+            },
+            _parseTabularFile: function(textContent) {
+                var lines = textContent.split('\n');
+                if (lines.length > 0) {
+                    var line, fields, field, data = [],
+                        columns = [],
+                        obj;
+
+                    // if (lines[0].charAt(0) == '#') {
+                    var firstLine = lines[0].replace('#', '');
+                    fields = firstLine.split('\t');
+                    for (var i = 0; i < fields.length; i++) {
+                        field = fields[i];
+                        field = field.trim();
+                        var name = field.replace(/ /gi, '_');
+                        var width = 150;
+                        if (i === 0) {
+                            // width = 150;
+                            width = 400;
+                        }
+                        columns.push({
+                            name: name,
+                            title: name.replace('path', 'circuit'),
+                            width: width
+                        });
+                    }
+                    if (columns.length) {
+                        for (var i = 1; i < lines.length; i++) {
+                            line = lines[i];
+                            if (line != '' && line.charAt(0) != '#') {
+                                fields = line.split('\t');
+                                obj = {};
+                                for (var j = 0; j < fields.length; j++) {
+                                    field = fields[j].trim();
+                                    if (window.isNaN != null && !isNaN(field)) {
+                                        field = parseFloat(field).toFixed(3);
+                                    }
+                                    if (field.indexOf('http') == "0") {
+                                        field = '<a target="_blank" href="' + field + '">' + field + '</a>'
+                                    }
+                                    column = columns[j];
+                                    obj[column.name] = field;
+                                }
+                                data.push(obj);
+                            }
+                        }
+                    }
+                    return {
+                        columns: columns,
+                        data: data
+                    };
+                }
+            },
+            handleDownloadJob: function(e) {
+                var me = this;
+                var url = CbaManager.jobs.download({
+                    id: me.job._id,
+                    query: {
+                        sid: Cookies("bioinfo_sid")
+                    },
+                    request: {
+                        url: true
+                    }
+                });
+
+                var link = document.createElement('a');
+                link.href = url;
+                var event = new MouseEvent('click', {
+                    'view': window,
+                    'bubbles': true,
+                    'cancelable': true
+                });
+                link.dispatchEvent(event);
+            },
+            handleRelaunchJob: function(e) {
+                this.fire('job-relaunched', this.job);
+            },
+            handleDeleteJob: function(e) {
+                var me = this;
+                e.stopPropagation();
+                new elmDialog().confirm("Are you sure?", function(answer) {
+                    if (answer == true) {
+                        CbaManager.jobs.delete({
+                            query: {
+                                jobId: me.job._id,
+                            },
+                            request: {
+                                success: function(response) {
+                                    if (response.response[0].error == null) {
+                                        console.log('Job deleted');
+                                    } else {
+                                        console.log(response.response[0].error);
+                                    }
+                                    me.fire('need-refresh');
+                                },
+                                error: function() {
+                                    console.log('Server error, try again later.');
+                                }
+                            }
+                        });
+                    }
+                });
+            }
+        });
+    </script>
+</dom-module>

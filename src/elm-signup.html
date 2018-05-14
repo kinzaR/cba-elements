@@ -1,0 +1,172 @@
+<link rel="import" href="../../polymer/polymer.html">
+<dom-module id="elm-signup">
+    <style>
+        :host {
+            display: block;
+            position: absolute;
+            box-sizing: border-box;
+            padding: 30px 100px;
+            left: 0;
+            right: 0;
+            margin: 0px auto 0px auto;
+            width: 500px;
+            box-shadow: 0px 0px 12px 6px rgba(0, 0, 0, 0.30);
+            background-color: var(--light-primary-color);
+            color: var(--primary-text-color);
+        }
+
+        .title {
+            text-align: center;
+            font-size: 25px;
+        }
+
+        .icon {
+            font-size: 50px;
+            color: var(--dark-primary-color);
+        }
+
+        .message {
+            margin: 20px 0 0 0;
+            box-shadow: 0px 0px 2px 1px rgba(0, 0, 0, 0.3);
+        }
+
+        #button {
+            font-weight: normal;
+            height: auto;
+            padding: 10px 15px;
+            font-size: 16px;
+            border-radius: 3px;
+            color: var(--text-primary-color);
+            background-color: var(--dark-button-color);
+        }
+
+        #button:hover {
+            background-color: var(--light-button-color);
+        }
+    </style>
+    <template>
+        <div class="title">
+            <div>
+                Create a new user
+            </div>
+            <div class="icon">
+                <i class="fa fa-pencil-square-o"></i>
+            </div>
+        </div>
+        <form id="form" on-keypress="handleFormKey">
+            <label class="elm">User name:</label>
+            <input class="elm" type="text" value="{{name::input}}" required pattern="[a-zA-Z0-9._]+">
+            <br>
+            <label class="elm">E-mail:</label>
+            <input class="elm" type="email" value="{{email::input}}" required>
+            <br>
+            <label class="elm">Create a password:</label>
+            <input class="elm" type="password" value="{{password::input}}" required>
+            <label class="elm">Confirm your password:</label>
+            <input class="elm" type="password" value="{{passwordCheck::input}}" required>
+
+            <br>
+            <br>
+
+            <div id="button" class="elm-btn elm-btn-shdw" on-click="handleForm">Sign up</div>
+        </form>
+        <div hidden$="{{!message}}" class="message elm-note elm-note-warn">&nbsp;{{message}}</div>
+    </template>
+
+    <script>
+        Polymer({
+            is: "elm-signup",
+            properties: {
+                name: {
+                    type: String,
+                    value: ''
+                },
+                email: {
+                    type: String,
+                    value: ''
+                },
+                password: {
+                    type: String,
+                    value: ''
+                },
+                passwordCheck: {
+                    type: String,
+                    value: ''
+                },
+                message: {
+                    type: String,
+                    value: ''
+                }
+            },
+            handleFormKey: function(e) {
+                if (e.which == 13) {
+                    this.handleForm();
+                }
+            },
+            handleForm: function(e) {
+                this.message = '';
+                this.email = (this.email === "demo") ? "demo@demo.com" : this.email;
+                if (this.$.form.checkValidity()) {
+                    if (this.password === this.passwordCheck) {
+                        this._signup();
+                    } else {
+                        this.set('message', 'Sorry, your password does not match.');
+                    }
+                } else {
+                    // alert("Please, you should fill all the fields. If error persist, contact crew at " + CONTACT_MAIL + ".");
+                    this.set('message', 'Please, you should fill all the fields.');
+                }
+            },
+            clean: function() {
+                this.name = "";
+                this.email = "";
+                this.password = "";
+                this.passwordCheck = "";
+            },
+            _signup: function() {
+                var me = this;
+                CbaManager.users.create({
+                    query: {
+                        name: this.name,
+                        email: this.email,
+                    },
+                    sid: CryptoJS.SHA1(this.password).toString(),
+                    request: {
+                        async: true,
+                        success: function(response) {
+                            if (response.response[0].error == null) {
+                                var name = response.response[0].results[0].name;
+                                // me.message = email + ' created';
+                                Cookies.set('bioinfo_sid', response.response[0].results[0].sessions[0].id, {
+                                    path: window.location.pathname
+                                });
+                                Cookies.set('bioinfo_user', name, {
+                                    path: window.location.pathname
+                                });
+
+                                me.clean();
+
+                                me.fire('login', {
+                                    status: true
+                                });
+                            } else {
+                                console.log(response.response[0].error);
+                                me.message = response.response[0].error;
+                                //Delete cookies
+                                Cookies.expire('bioinfo_sid', {
+                                    path: window.location.pathname
+                                });
+                                Cookies.expire('bioinfo_user', {
+                                    path: window.location.pathname
+                                });
+                            }
+                        },
+                        error: function() {
+                            me.message = 'Server error, try again later.';
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+</dom-module>

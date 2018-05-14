@@ -1,0 +1,199 @@
+<link rel="import" href="../../../polymer/polymer.html">
+<link rel="import" href="../../../iron-flex-layout/iron-flex-layout-classes.html">
+
+<dom-module id="elm-folder-tree-item">
+    <style is="custom-style" include="iron-flex iron-flex-reverse iron-flex-alignment iron-flex-factors iron-positioning">
+         :host {
+            position: relative;
+            display: block;
+            box-sizing: border-box;
+            /*width:100%;*/
+            /*overflow: hidden;
+            text-overflow: clip;*/
+        }
+
+        .main {
+            cursor: pointer;
+            border: 1px solid transparent;
+            white-space: nowrap;
+            /*overflow: hidden;
+            text-overflow: clip;*/
+        }
+
+        .main:hover>* {
+            background-color: var(--hover-color)
+        }
+
+        .folder:before {
+            font-family: "FontAwesome";
+            display: inline-block;
+            width: 20px;
+            text-align: center;
+            content: '\f07b';
+        }
+
+        .fOpen:before {
+            font-family: "FontAwesome";
+            display: inline-block;
+            width: 20px;
+            text-align: center;
+            content: '\f07c';
+        }
+
+        .job:before {
+            font-family: "FontAwesome";
+            display: inline-block;
+            width: 20px;
+            text-align: center;
+            content: '\f0c3';
+        }
+
+        .arrow:before {
+            font-family: "FontAwesome";
+            display: inline-block;
+            width: 12px;
+            text-align: center;
+            content: '\f0da';
+        }
+
+        .arrow[open]:before {
+            content: '\f0d7';
+        }
+
+        .arrow[empty]:before {
+            content: '\00a0';
+        }
+
+        .arrow {
+            padding: 2px 0 2px 2px;
+        }
+
+        .name {
+            padding: 2px 2px 2px 0;
+        }
+
+        .name.dragover,
+        .arrow:hover {
+            color: var(--accent-color);
+        }
+    </style>
+    <template>
+        <div class="main horizontal layout elm-nosel">
+            <div class="arrow" empty$="{{isEmpty(file.f)}}" open$="{{file.open}}" on-click="handleArrowClick"></div>
+            <div id="name" class$="{{computeClass(file)}}" on-click="handleClick" on-dblclick="handleDblclick">{{computeName(file.n)}}</div>
+        </div>
+        <div style="margin-left:7px;" hidden$="{{!file.open}}">
+            <template is="dom-repeat" items="{{fileItems}}" as="f">
+                <elm-folder-tree-item file="{{f}}">
+                </elm-folder-tree-item>
+            </template>
+        </div>
+    </template>
+    <script>
+        Polymer({
+            is: "elm-folder-tree-item",
+            properties: {
+                file: {
+                    type: Object,
+                    observer: 'handleFileChanged'
+                },
+                fileItems: {
+                    type: Array
+                }
+            },
+            listeners: {
+                'drop': 'handleDrop',
+                'dragover': 'handleDragOver',
+                'dragleave': 'handleDragLeave'
+            },
+            handleFileChanged: function(neo, old) {
+                if (neo) {
+                    this.computeOpen();
+                }
+            },
+            isEmpty: function(f) {
+                return f.length == 0;
+            },
+            computeName: function(name) {
+                if (name.indexOf('anonymous___') != -1) {
+                    name = 'anonymous';
+                }
+                return name;
+            },
+            handleArrowClick: function(e) {
+                this.toggleOpen();
+            },
+            handleDblclick: function(e) {
+                this.toggleOpen();
+            },
+            handleClick: function(e) {
+                this.fire('treeitemclick', {
+                    _id: this.file._id
+                });
+            },
+            toggleOpen: function() {
+                if (this.file.f.length > 0) {
+                    this.set('file.open', !this.file.open);
+                }
+                this.computeOpen();
+            },
+            computeOpen: function() {
+                if (this.file.open == true) {
+                    this.set('fileItems', this.file.f);
+                } else {
+                    this.set('fileItems', []);
+                }
+            },
+            handleDragOver: function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                // console.log("Drag over");
+                this.$.name.classList.add('dragover');
+            },
+            handleDragLeave: function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                this.$.name.classList.remove('dragover');
+            },
+            handleDrop: function(e) {
+                var me = this;
+                this.$.name.classList.remove('dragover');
+                e.preventDefault();
+                e.stopPropagation();
+                // console.log("FOLDER TREE ITEM DROP");
+                var newParentId = e.currentTarget.file._id;
+                console.log(e.currentTarget.file.path + " -> " + newParentId);
+                // console.log(newParentId);
+                CbaManager.files.move({
+                    query: {
+                        fileId: e.dataTransfer.getData("text"),
+                        newId: newParentId
+                    },
+                    request: {
+                        success: function(response) {
+                            if (response.response[0].error == null) {
+                                console.log(response.response[0].results[0]);
+                                me.fire('need-refresh');
+                            } else {
+                                console.log(response.response[0].error);
+                            }
+                        },
+                        error: function() {
+                            console.log('Server error, try again later')
+                        }
+                    }
+                });
+                this.fire('need-refresh');
+            },
+            computeClass: function(file) {
+                if (file.j) {
+                    return "job name flex"
+                } else if (file.open == true) {
+                    return "fOpen name flex"
+                } else {
+                    return "folder name flex"
+                }
+            }
+        });
+    </script>
+</dom-module>

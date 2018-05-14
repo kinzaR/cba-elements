@@ -1,0 +1,147 @@
+<link rel="import" href="../../polymer/polymer.html">
+<link rel="import" href="../../iron-flex-layout/iron-flex-layout-classes.html">
+<link rel="import" href="../../iron-resizable-behavior/iron-resizable-behavior.html">
+<dom-module id="elm-tab">
+    <style is="custom-style" include="iron-flex iron-flex-reverse iron-flex-alignment iron-flex-factors iron-positioning">
+         :host {
+            display: block;
+            position: relative;
+            box-sizing: border-box;
+            /*box-shadow: 0px 0px 2px 0px rgba(0, 0, 0, 0.4);*/
+            height: 300px;
+            border: 1px solid var(--divider-color);
+            box-shadow: 0 0 2px rgba(0, 0, 0, 0.2);
+        }
+
+        .tabwrap {
+            box-sizing: border-box;
+            position: relative;
+            height: 100%;
+        }
+
+        .tabname {
+            height: 20px;
+            line-height: 20px;
+            font-size: 14px;
+            padding: 5px 10px;
+            color: #666;
+            text-align: center;
+            border-bottom: 1px solid #ddd;
+            cursor: pointer;
+        }
+
+        .tabname[data-checked] {
+            background-color: #fff;
+            border-top-left-radius: 7px;
+            border-top-right-radius: 7px;
+            color: #222;
+            border: 1px solid #ddd;
+            border-bottom: 1px solid transparent;
+            box-shadow: 1px -1px 1px rgba(0, 0, 0, 0.1);
+        }
+
+        .tabname:hover {
+            color: #8ba7a7;
+            font-weight: bold;
+        }
+
+        #submenu {
+            background-color: #e2e9e9;
+            padding-left: 10px;
+            padding-top: 10px;
+        }
+
+        #information {
+            position: relative;
+            height: calc(100% - 45px);
+        }
+
+         ::content .tab {
+            position: relative;
+            height: 100%;
+        }
+    </style>
+    <template>
+        <div class="tabwrap">
+            <div id="submenu" class="horizontal layout">
+                <template is="dom-repeat" items="{{tabNames}}">
+                    <div class="tabname" on-click="handleOptions" data-value$="{{item}}" data-checked$="{{computeOptions(option,item)}}">{{item}}
+                    </div>
+                </template>
+            </div>
+            <div id="information">
+                <content select=".tab"></content>
+            </div>
+        </div>
+    </template>
+
+    <script>
+        Polymer({
+            is: "elm-tab",
+            behaviors: [
+                Polymer.IronResizableBehavior
+            ],
+            properties: {
+                option: {
+                    type: String,
+                    value: ''
+                },
+                tabs: {
+                    type: Array,
+                    value: function() {
+                        return [];
+                    }
+                },
+                tabNames: {
+                    type: Array,
+                    value: function() {
+                        return [];
+                    }
+                },
+            },
+            listeners: {
+                'iron-resize': '_onIronResize'
+            },
+            _onIronResize: function() {
+
+            },
+            ready: function() {
+                var tabNames = [];
+                var tabs = Polymer.dom(this).querySelectorAll('.tab');
+                for (var i = 0; i < tabs.length; i++) {
+                    var t = tabs[i];
+                    t.setAttribute('hidden', "");
+                    tabNames.push(t.dataset.tab);
+                }
+
+                this.set('tabs', tabs);
+                this.set('tabNames', tabNames);
+                this.set('option', tabNames[0]);
+                this.tabs[0].removeAttribute('hidden', "");
+            },
+            handleOptions: function(e) {
+                this.option = e.currentTarget.dataset.value;
+                var visibleTab;
+                for (var i = 0; i < this.tabs.length; i++) {
+                    var t = this.tabs[i];
+                    if (t.dataset.tab == this.option) {
+                        t.removeAttribute('hidden', "");
+                        visibleTab = t;
+                    } else {
+                        t.setAttribute('hidden', "");
+                    }
+                }
+                this.fire('tab-change', {
+                    name: this.option,
+                    tab: visibleTab,
+                    hidden: (elm.utils.closest(visibleTab) != null),
+                    tabs: this.tabs
+                });
+            },
+            computeOptions: function(option, value) {
+                return option === value;
+            }
+
+        })
+    </script>
+</dom-module>

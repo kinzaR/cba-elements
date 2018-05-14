@@ -1,0 +1,220 @@
+<link rel="import" href="../../../polymer/polymer.html">
+<dom-module id="elm-variant-effect">
+    <style is="custom-style" include="iron-flex iron-flex-reverse iron-flex-alignment iron-flex-factors iron-positioning">
+        :host {
+            display: block;
+            position: relative;
+            width: 100%;
+        }
+
+        elm-table {
+            box-shadow: 0px 0px 2px 0px rgba(0, 0, 0, 0.2);
+            overflow-y: hidden;
+        }
+        
+        elm-table::shadow #list {
+            min-height: 200px;
+        }
+
+        elm-table::shadow {
+            font-size: 11px;
+        }
+
+        elm-table::shadow .table-row {
+            height: 25px;
+        }
+
+        elm-table::shadow .table-header-field > .name.elm-table {
+            padding: 4px 0;
+        }
+    </style>
+    <template>
+        <elm-table id="table" hidden$="{{isEmpty}}" on-rowclick="handleRowClick" enable-export enable-paging></elm-table>
+        <div hidden$="{{!isEmpty}}" style="padding:20px 50px;">
+            No effect found.
+        </div>
+    </template>
+</dom-module>
+
+<script>
+    Polymer({
+        is: 'elm-variant-effect',
+        properties: {
+            row: {
+                type: Object,
+                observer: 'rowChanged'
+            },
+            isEmpty: {
+                value: false,
+                type: Boolean
+            }
+        },
+        ready: function() {
+            this.$.table.columns = this._columns;
+        },
+        _columns: [{
+                name: "geneName",
+                title: "Gene Name",
+                defaultValue: '.'
+            }, {
+                name: "ensemblGeneId",
+                title: "Ensembl Gene Id",
+                cellTemplate: "ensemblGeneIdTemplate",
+                width: 150,
+                defaultValue: '.'
+            }, {
+                name: "ensemblTranscriptId",
+                title: "Ensembl Transcript Id",
+                cellTemplate: 'ensemblTranscriptIdTemplate',
+                width: 150,
+                defaultValue: '.'
+            }, {
+                name: "so",
+                title: "Conseq. type",
+                formula: function(row) {
+                    var aux = {};
+                    if (row.soName && row.soAccession) {
+
+                        aux.soName = row.soName;
+                        aux.soAccession = row.soAccession;
+                    }
+                    return aux.soName;
+                },
+                width: 300
+            },
+            {
+                name: "codon",
+                title: "Codon",
+                width: 60,
+                defaultValue: '.'
+            }, {
+                name: "strand",
+                title: "Strand",
+                defaultValue: '.'
+            }, {
+                name: "biotype",
+                title: "Biotype",
+                defaultValue: '.'
+            }, {
+                name: "cdnaPosition",
+                title: "cDna Position",
+                width: 80,
+                defaultValue: '.'
+            }, {
+                name: "cdsPosition",
+                title: "cds Position",
+                width: 80,
+                defaultValue: '.'
+            }, {
+                name: "aaPosition",
+                title: "AA Position",
+                width: 80,
+                formula: function(row) {
+                    try {
+                        var pva = row.proteinVariantAnnotation;
+                        var res = (pva.position) ? pva.position : ".";
+                        return res;
+                    } catch (e) {
+                        return ".";
+                    }
+                }
+            }, {
+                name: "aaChange",
+                title: "AA Change",
+                width: 80,
+                formula: function(row) {
+                    try {
+                        var pva = row.proteinVariantAnnotation;
+                        var res = pva.reference + " > " + pva.alternate;
+                        return res;
+                    } catch (e) {
+                        return ".";
+                    }
+                }
+
+            }, {
+                name: "sift",
+                title: "Sift",
+                formula: function(row) {
+                    var pva = row.proteinVariantAnnotation;
+                    if (pva != null && Object.keys(pva).length > 0) {
+                        var pss = pva.substitutionScores;
+                        if (pss != null && pss.length > 0) {
+                            for (var i = 0; i < pss.length; i++) {
+                                var elem = pss[i];
+                                if (elem.source.toLowerCase() == "sift") {
+                                    return elem.score;
+                                }
+                            }
+                        }
+                    }
+                    return ".";
+                },
+                width: 80
+            }, {
+                name: "polyphen",
+                title: "Polyphen",
+                formula: function(row) {
+                    var pva = row.proteinVariantAnnotation;
+                    if (pva != null && Object.keys(pva).length > 0) {
+                        var pss = pva.substitutionScores;
+                        if (pss != null && pss.length > 0) {
+                            for (var i = 0; i < pss.length; i++) {
+                                var elem = pss[i];
+                                if (elem.source.toLowerCase() == "polyphen") {
+                                    return elem.score;
+                                }
+                            }
+                        }
+                    }
+
+                    return ".";
+                },
+                width: 100
+            }
+        ],
+
+        rowChanged: function(neo, old) {
+            var me = this;
+            this.$.table.currentPage = 1;
+            if (neo) {
+                var variant = neo.chromosome + ":" + neo.start + ":" + neo.reference + ":" + neo.alternate;
+                CellBaseManager.get({
+                    species: 'hsapiens',
+                    category: 'genomic',
+                    subCategory: 'variant',
+                    resource: 'annotation',
+                    query: variant,
+                    //                    query: "19:45411941:T:C",
+                    async: false,
+                    success: function(response) {
+                        try {
+                            me.$.table.data = me.parseFunction(response.response[0].result[0].consequenceTypes);
+                            me.isEmpty = (me.$.table.data.length > 0) ? false : true;
+                        } catch (e) {
+                            me.$.table.data = [];
+                            me.isEmpty = true;
+                        }
+                    }
+                });
+            }
+        },
+        parseFunction: function(data) {
+            var res = [];
+
+            for (var i = 0; i < data.length; i++) {
+                var elem = data[i];
+
+                for (var j = 0; j < elem.sequenceOntologyTerms.length; j++) {
+                    var soTerm = elem.sequenceOntologyTerms[j];
+                    var aux = elm.utils.clone(elem);
+                    aux.soName = soTerm.name;
+                    aux.soAccession = soTerm.accession;
+
+                    res.push(aux);
+                }
+            }
+            return res;
+        }
+    });
+</script>
