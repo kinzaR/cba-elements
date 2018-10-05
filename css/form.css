@@ -122,6 +122,10 @@ label.elm-control > input[type=checkbox]:checked + span:before {
     content: '\f046';
 }
 
+label.elm-control > input[type=checkbox]:indeterminate + span:before {
+    content: '\f147';
+}
+
 label.elm-control > input[type=radio]:disabled + span,
 label.elm-control > input[type=radio]:disabled + span:before {
     color: rgba(125, 125, 125, 0.25);
