@@ -48,6 +48,9 @@ var CbaManager = {
         delete: function (args) {
             return CbaManager._doRequest(args, 'jobs', 'delete');
         },
+        stop: function (args) {
+            return CbaManager._doRequest(args, 'jobs', 'stop');
+        },
         download: function (args) {
             return CbaManager._doRequest(args, 'jobs', 'download');
         },
