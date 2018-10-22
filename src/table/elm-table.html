@@ -390,6 +390,10 @@
         #list[loading] {
             visibility: hidden;
         }
+        paper-progress.red{
+            --paper-progress-active-color: var(--paper-red-500);
+            --paper-progress-secondary-color: var(--paper-red-100);
+        }
     </style>
     <template>
         <div id="loading" hidden$="{{!loading}}">
