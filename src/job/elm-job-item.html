@@ -278,6 +278,7 @@
                                         console.log(response.response[0].error);
                                     }*/
                                     console.log("Job canceled");
+                                    me.fire('need-refresh');
                                 },
                                 error: function () {
                                     console.log('Server error, try again later.');
