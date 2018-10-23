@@ -168,7 +168,6 @@
             handleSelect: function(e) {
                 e.stopPropagation();
                 var job = e.currentTarget.job;
-                console.log(job);
                 if (job.status === 'DONE') {
                     this.selected = job;
                     var sel = this.querySelector("elm-job-item[selected]");
