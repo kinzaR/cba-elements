@@ -230,7 +230,7 @@ var CbaManager = {
                 }
             }
 
-            var elm_app = (window.elm_APP != undefined) ? window.elm_APP : "-";
+            var elm_app = (window.ELM_APP != undefined) ? window.ELM_APP : "-";
             request.setRequestHeader("x-elm-app", elm_app);
 
             var elm_user = (Cookies("bioinfo_user") != undefined) ? Cookies("bioinfo_user") : "-";

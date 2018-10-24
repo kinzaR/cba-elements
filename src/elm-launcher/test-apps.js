@@ -1,4 +1,4 @@
-elm_LAUNCHER_APPS = [{
+ELM_LAUNCHER_APPS = [{
         "name": "VARIANT",
         "shortDescription": "Fast and accurate functional characterization of variants in VCF files",
         "link": "http://variant.bioinfo.cipf.es/",
