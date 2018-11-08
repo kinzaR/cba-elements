@@ -1,0 +1,185 @@
+<link rel="import" href="../../polymer/polymer.html">
+<link rel="import" href="../../iron-flex-layout/iron-flex-layout-classes.html">
+<dom-module id="elm-form-box">
+    <style is="custom-style" include="iron-flex iron-flex-reverse iron-flex-alignment iron-flex-factors iron-positioning">
+         :host {
+            display: block;
+            position: relative;
+            box-sizing: border-box;
+            margin: 7px 5px;
+            box-shadow: 0 0 2px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        #form {
+            border: 1px solid rgba(125, 125, 125, 0.4);
+            background-color: var(--text-primary-color);
+        }
+
+        #header {
+            padding: 5px 10px;
+            font-size: 15px;
+            background-color: var(--light-secondary-color);
+            color: var(--primary-text-color);
+        }
+
+         :host[collapsible] #header {
+            cursor: pointer;
+        }
+
+         :host[collapsible] #header:hover {
+            font-weight: bold;
+            color: var(--dark-button-color);
+        }
+
+        #container {
+            padding: 8px 10px;
+            border-top: 1px solid rgba(125, 125, 125, 0.3);
+        }
+
+        .collapsible {
+            padding: 0 2px;
+            cursor: pointer;
+        }
+
+        .collapsible>i {
+            color: var(--secondary-text-color);
+            font-size: 12px;
+        }
+
+        .collapsible>i:hover {
+            font-weight: bold;
+            color: var(--dark-button-color);
+        }
+
+        .elm-note {
+            margin: 20px;
+        }
+
+         :host.error {
+            box-shadow: 0 0 8px 1px rgba(191, 71, 71, 1);
+        }
+
+         :host.error #header {
+            color: #BF4747;
+        }
+
+         :host[disabled] .disabled {
+            position: absolute;
+            box-sizing: border-box;
+            background-color: rgba(125, 125, 125, 0.3);
+            width: 100%;
+            height: 100%;
+            top:0;
+            left:0;
+        }
+    </style>
+    <template>
+        <div id="form">
+            <div id="header" class="horizontal layout" on-click="handleCollapseAction">
+                <div class="horizontal layout flex center">
+                    <content select=".header"></content>
+                </div>
+                <div hidden$="{{!collapsible}}" class="collapsible">
+                    <i class$="{{computeIcon(collapsible,collapsed)}}" title="{{computeTitle(collapsible,collapsed)}}"></i>
+                </div>
+            </div>
+            <div id="container" class="horizontal layout" hidden$="{{isContainerHidden(collapsible, collapsed)}}">
+                <content select=".container"></content>
+            </div>
+
+            <div id="error" class="elm-note elm-note-error" hidden$="{{hideErrors}}">
+                <template is="dom-repeat" items="{{errors}}">
+                    <div>{{item.msg}}</div>
+                </template>
+            </div>
+        </div>
+        <div class="disabled"></div>
+    </template>
+
+    <script>
+        Polymer({
+            is: "elm-form-box",
+            properties: {
+                collapsible: {
+                    type: Boolean,
+                    reflectToAttribute: true,
+                    value: false
+                },
+                collapsed: {
+                    type: Boolean,
+                    reflectToAttribute: true,
+                    value: false,
+                },
+                disabled: {
+                    type: Boolean,
+                    reflectToAttribute: true,
+                    value: false,
+                },
+                errors: {
+                    type: Array,
+                    value: function() {
+                        return [];
+                    }
+                },
+                hideErrors: {
+                    type: Boolean,
+                    value: true
+
+                }
+            },
+            observers: [
+                "computeErrors(errors.splices)"
+            ],
+            ready: function() {
+
+            },
+
+            handleCollapseAction: function(e) {
+                if (this.collapsible) {
+                    this.collapsed = !this.collapsed;
+                };
+            },
+            isContainerHidden: function(collapsible, collapsed) {
+                if (collapsible && collapsed) {
+                    return true;
+                }
+                return false;
+            },
+            computeIcon: function(collapsible, collapsed) {
+                if (collapsible && collapsed) {
+                    return "fa fa-plus";
+                } else {
+                    return "fa fa-minus";
+                }
+            },
+            computeTitle: function(collapsible, collapsed) {
+                if (collapsible && collapsed) {
+                    return "Maximize";
+                } else {
+                    return "Minimize";
+                }
+            },
+            addError: function(msg) {
+                this.push('errors', {
+                    msg: msg
+                });
+            },
+            clearErrors: function() {
+                this.set('errors', []);
+            },
+            computeErrors: function(errors) {
+                if (errors) {
+                    this.hideErrors = errors.length == 0;
+                } else {
+                    this.hideErrors = true;
+                }
+
+                if (!this.hideErrors) {
+                    this.classList.add("error");
+                } else {
+                    this.classList.remove("error");
+                }
+            }
+        })
+    </script>
+</dom-module>
