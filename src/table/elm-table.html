@@ -1245,7 +1245,9 @@
                 el._column = column;
                 var nameEl = document.createElement('div');
                 nameEl.classList.add('name', 'style-scope', 'elm-table');
-                nameEl.innerHTML = column.title;
+                columnTitle=column.title.replace(/_/g, ' ');
+                columnTitle=columnTitle.replace('.', ' ');
+                nameEl.innerHTML = columnTitle;
                 el.appendChild(nameEl);
 
                 if (this.enableResize) {

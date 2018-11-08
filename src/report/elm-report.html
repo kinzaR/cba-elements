@@ -353,7 +353,7 @@
             processResultFiles: function() {
                 var me = this;
                 CbaManager.getFileContent(this.getFileFromName('report.xml')._id, function(content) {
-                    console.log(content);
+                    //console.log(content);
                     me.processReportFile(content);
                 });
             },
