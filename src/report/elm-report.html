@@ -278,7 +278,6 @@
                     proteinviewer: 'fa-share-alt',
                     networkMinerPlot: 'fa-bar-chart',
                     heatmap: 'fa-bar-chart',
-
                 }
             },
             handleUp: function() {
@@ -320,11 +319,39 @@
                     Polymer.dom(this.$.outlineContent).appendChild(inputParamsElem);
 
                     var files = [];
-                    CbaManager.getPlainFolderFiles(me.job.folder._id, function(files) {
-                        me._createFilePathMap(files);
-                        me.processResultFiles();
-                    });
+                    
+                    if (me.job.folder._id && typeof(me.job.LocalFile) == 'undefined') {
+                        CbaManager.getPlainFolderFiles(me.job.folder._id, function(files) {
+                            me._createFilePathMap(files);
+                            me.processResultFiles();
+                        });
+                    }
+                    if (me.job.folder._id==null & typeof(me.job.LocalFile) !== 'undefined') {
+                        me._createFilePathMap(me.job.LocalFile);
+                        me._readLocalFile(me.job.LocalFile+"/report.xml", function(content) {
+                            me.processReportFile(content);
+                        });
+                        
+                    }
                 }
+            },
+            _readLocalFile: function (file,cb){
+                var me = this;
+                var rawFile = new XMLHttpRequest();
+                rawFile.open("GET", file, true);
+                
+                rawFile.onreadystatechange = function ()
+                {
+                    if(rawFile.readyState === 4)
+                    {
+                        if(rawFile.status === 200 || rawFile.status == 0)
+                        {
+                            var allText = rawFile.responseText;
+                            cb(allText);
+                        }
+                    }
+                }
+                rawFile.send(null);
             },
             _createFilePathMap: function(files) {
                 this.fileNameMap = {};
@@ -353,7 +380,6 @@
             processResultFiles: function() {
                 var me = this;
                 CbaManager.getFileContent(this.getFileFromName('report.xml')._id, function(content) {
-                    //console.log(content);
                     me.processReportFile(content);
                 });
             },
@@ -362,9 +388,18 @@
                 var reportXML = parser.parseFromString(fileContent, "text/xml");
 
                 var inputParamsEl = reportXML.querySelector('input-params');
-                var inputParams = inputParamsEl.childNodes;
+                if (inputParamsEl!=null) {
+                    var inputParams = inputParamsEl.childNodes; 
+                }else{
+                    var inputParams=[] ;
+                }
+                
                 var outputParamsEl = reportXML.querySelector('output-params');
-                var outputParams = outputParamsEl.childNodes;
+                if (outputParamsEl != null) {
+                    var outputParams = outputParamsEl.childNodes;
+                } else {
+                    var outputParams =[]; 
+                }
 
                 if (inputParams.length == 0 || (inputParams.length == 1 && inputParams[0].textContent.trim() == "")) {
                     this.$.inputParamsHeader.hidden = true;
@@ -382,7 +417,7 @@
                         var functionPath = '_' + outEl.tagName + 'Tag';
                         if (this[functionPath] != null) {
                             var name = outEl.getAttribute('file');
-                            if (name != null && this.getFileFromName(name) == null) {
+                            if (name != null && this.getFileFromName(name) == null &&  typeof(this.job.LocalFile) == 'undefined') {
                                 console.log('####### File : ' + name + ' not found !');
                                 //transform to param;
                                 var newOutEl = reportXML.createElement('param');
@@ -398,7 +433,6 @@
                         }
                     }
                 }
-
             },
             _addTag: function(el, outEl, renderEl) {
                 el.setAttribute("id", "elmReportId_" + this.count);
@@ -499,7 +533,12 @@
                 var a = document.createElement('a');
                 a.innerHTML = outEl.getAttribute('title');
                 a.appendChild(this._createDownloadIcon());
-                a.setAttribute('href', CbaManager.getFileURL(this.getFileFromName(name)._id));
+                if (this.getFileFromName(name) != null && typeof(this.job.LocalFile) == 'undefined') {
+                    a.setAttribute('href', CbaManager.getFileURL(this.getFileFromName(name)._id));
+                }else{
+                    a.setAttribute('href',this.job.LocalFile+'/'+name);
+                }
+                
 
                 el.appendChild(i);
                 el.appendChild(a);
@@ -591,11 +630,17 @@
                 var a = document.createElement('a');
                 a.innerHTML = outEl.getAttribute('title');
                 a.appendChild(this._createDownloadIcon());
-
-                a.setAttribute('href', CbaManager.getFileURL(this.getFileFromName(name)._id));
-
+                if (this.getFileFromName(name) != null && typeof(this.job.LocalFile) == 'undefined') {
+                    a.setAttribute('href', CbaManager.getFileURL(this.getFileFromName(name)._id));
+                }else{
+                    a.setAttribute('href', this.job.LocalFile+'/'+name);
+                }
                 var img = document.createElement('img');
-                img.setAttribute('src', CbaManager.getFileURL(this.getFileFromName(name)._id));
+                if (this.getFileFromName(name) != null && typeof(this.job.LocalFile) == 'undefined') {
+                    img.setAttribute('src', CbaManager.getFileURL(this.getFileFromName(name)._id));
+                }else{
+                    img.setAttribute('src', this.job.LocalFile+'/'+name);
+                }
                 var width = outEl.getAttribute('width');
                 var height = outEl.getAttribute('height');
                 var reg = new RegExp('^[0-9]+$');
@@ -964,17 +1009,29 @@
                 var a = document.createElement('a');
                 a.innerHTML = outEl.getAttribute('title');
                 a.appendChild(this._createDownloadIcon());
-                a.setAttribute('href', CbaManager.getFileURL(this.getFileFromName(name)._id));
+                if (this.getFileFromName(name) != null && typeof(this.job.LocalFile) == 'undefined') {
+                    a.setAttribute('href', CbaManager.getFileURL(this.getFileFromName(name)._id));
+                }else{
+                    a.setAttribute('href',this.job.LocalFile+'/'+name);
+                }
 
                 var table = document.createElement('elm-table');
                 table.setAttribute('enable-paging', '');
                 table.setAttribute('page-size', outEl.getAttribute('page-size'));
-
-                CbaManager.getFileContent(this.getFileFromName(name)._id, function(content) {
-                    var parsedContent = me._parseTabularFile(content);
-                    table.set('data', parsedContent.data);
-                    table.set('columns', parsedContent.columns);
-                });
+                
+                if (this.getFileFromName(name) != null && typeof(this.job.LocalFile) == 'undefined') {
+                     CbaManager.getFileContent(this.getFileFromName(name)._id, function(content) {
+                        var parsedContent = me._parseTabularFile(content);
+                        table.set('data', parsedContent.data);
+                        table.set('columns', parsedContent.columns);
+                    });
+                }else{
+                    me._readLocalFile(me.job.LocalFile+'/'+name, function(content) {
+                        var parsedContent = me._parseTabularFile(content);
+                        table.set('data', parsedContent.data);
+                        table.set('columns', parsedContent.columns);
+                    });
+                }
 
                 el.appendChild(i);
                 el.appendChild(a);
@@ -986,6 +1043,15 @@
                 var el = document.createElement('div');
 
                 var pv = document.createElement('pathway-viewer');
+                pv.set('hideAltered', true);
+                pv.set('sessionFileNameMap', this.fileNameMap);
+                pv.set('path', outEl.getAttribute('path'));
+                if (typeof(this.job.LocalFile) != 'undefined') {
+                    pv.set('pathType', 'url');
+                } else {
+                    pv.set('pathType', outEl.getAttribute('path-type'));
+                }
+
                 var minHeight = 700;
                 var height = Math.max((window.innerHeight - 120), minHeight);
                 pv.style.height = height + 'px';
@@ -1027,12 +1093,6 @@
                 }
                 pv.nodeAttributeMapping = nodeAttrMap;
                 pv.edgeAttributeMapping = edgeAttrMap;
-
-                pv.set('hideAltered', true);
-                pv.set('sessionFileNameMap', this.fileNameMap);
-                pv.set('path', outEl.getAttribute('path'));
-                pv.set('pathType', outEl.getAttribute('path-type'));
-
                 // pw.style.border = "1px solid #d3d3d3";
                 // pw.style.boxShadow = "0px 0px 4px 0px rgba(0, 0, 0, 0.2)";
 
@@ -1152,13 +1212,22 @@
 
                 var proteinViewer = document.createElement('babelomics-protein-viewer');
                 proteinViewer.style.height = '800px';
+                if (this.getFileFromName(name) != null && typeof(this.job.LocalFile) == 'undefined') {
+                    CbaManager.getFileContent(this.getFileFromName(name)._id, function(content) {
+                        var nodes = me._parseProteinNodes(content);
+                        // proteinViewer.set('speciesSelection', "hsapiens");
+                        // proteinViewer.set('nodeSelection', false);
+                        proteinViewer.set('nodes', nodes);
+                    });
+                }else{
+                    me._readLocalFile(me.job.LocalFile+'/'+name, function(content) {
+                        var nodes = me._parseProteinNodes(content);
+                        // proteinViewer.set('speciesSelection', "hsapiens");
+                        // proteinViewer.set('nodeSelection', false);
+                        proteinViewer.set('nodes', nodes);
+                    });
+                }
 
-                CbaManager.getFileContent(this.getFileFromName(name)._id, function(content) {
-                    var nodes = me._parseProteinNodes(content);
-                    // proteinViewer.set('speciesSelection', "hsapiens");
-                    // proteinViewer.set('nodeSelection', false);
-                    proteinViewer.set('nodes', nodes);
-                });
 
                 el.appendChild(i);
                 el.appendChild(a);
