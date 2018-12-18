@@ -52,6 +52,11 @@
         .file {
             margin-left: 2px;
         }
+        .message {
+            margin: 20px 0 0 0;
+            box-shadow: 0px 0px 2px 1px rgba(0, 0, 0, 0.3);
+            position: static;
+        }
     </style>
     <template>
         <div id="header" class="horizontal layout">
@@ -100,6 +105,9 @@
                 <input id="jobNotificationCheckbox" type="checkbox" name="job" on-click="handleClickJobNotification">
                 <span>Enable job notifications</span>
             </label>
+        </div>
+        <div hidden$="{{!message}}" class="elm-note elm-note-warn">
+                <div>{{message}}</div>
         </div>
 
     </template>
@@ -162,7 +170,11 @@
                     type: Boolean,
                     reflectToAttribute: true,
                     value: false
-                }
+                },
+                message: {
+                    type: String,
+                    value: ''
+                },
             },
             ready: function() {},
             handleSelect: function(e) {
@@ -279,7 +291,13 @@
                         var obj = {
                             job: !this.userData.notifications.job
                         };
-                        CbaManager.updateUserNotifications(this.userData.name, obj, function(notifications) {
+                        CbaManager.updateUserNotifications(this.userData.name, obj, function(notifications,msg) {
+                            if (msg!="Changed") {                              
+                                me.message=msg;
+                                setTimeout(function() { 
+                                    me.message='';
+                                }, 4000);
+                            }
                             me.userData.notifications = notifications;
                             for (var key in notifications) {
                                 if (key == 'job') {

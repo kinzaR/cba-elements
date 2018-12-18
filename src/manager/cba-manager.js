@@ -575,7 +575,7 @@ var CbaManager = {
                 },
                 body: JSON.stringify(notifications),
                 success: function (response) {
-                    cb(response.response[0].results[0]);
+                    cb(response.response[0].results[0],response.response[0].Msg);
                 },
                 error: function (response) {
 
