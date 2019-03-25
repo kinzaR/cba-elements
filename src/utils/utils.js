@@ -153,7 +153,7 @@ elm.utils = {
             validated = false;
         }
         if (scope.$.jobName.value == "") {
-            msg += "Error: Please add a job name.\n";
+            msg += "Error: Please add a study name.\n";
             validated = false;
         }
         if (!validated) {

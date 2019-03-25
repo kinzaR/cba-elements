@@ -127,13 +127,13 @@
                             <!-- <span style="margin-right:5px;"></span> -->
                         </template>
                         <i class="fa fa-file-text-o error-job" title="View Error file" on-click="handleViewErrFile" hidden$="{{computeErrIcon(job)}}"></i>
-                        <i class="fa fa-trash-o delete-job" title="Delete Job" on-click="handleDeleteJob" hidden$="{{computeDeleteJobIcon(job)}}"></i>
-                        <i class="fa fa-stop stop-job" title="Stop Job" on-click="handleStopJob" hidden$="{{computeStopIcon(job)}}"></i>
+                        <i class="fa fa-trash-o delete-job" title="Delete study" on-click="handleDeleteJob" hidden$="{{computeDeleteJobIcon(job)}}"></i>
+                        <i class="fa fa-stop stop-job" title="Stop study" on-click="handleStopJob" hidden$="{{computeStopIcon(job)}}"></i>
                         <!-- <i class="fa fa-trash-o delete-job" title="Delete Job" on-click="handleDeleteJob" hidden$={{computeDeleteJobIcon(job)}}></i> -->
-                        <i class="fa fa-refresh relaunch-job" title="Relaunch Job" on-click="handleRelaunchJob" hidden$="{{hideRelaunch(job)}}"></i>
+                        <i class="fa fa-refresh relaunch-job" title="Relaunch study" on-click="handleRelaunchJob" hidden$="{{hideRelaunch(job)}}"></i>
                         <!-- <i class="fa fa-info info-job" title="Job information" on-click="handleJobInformation"></i> -->
                         <i class="fa fa-download download-job" title="Download" on-click="handleDownloadJob" hidden$="{{computeDownloadJobIcon(job)}}"></i>
-                        <i class="fa fa-folder-open-o open-job-folder" title$="Open job folder: {{job.folder.path}}" on-click="handleOpenJobFolder"
+                        <i class="fa fa-folder-open-o open-job-folder" title$="Open study folder: {{job.folder.path}}" on-click="handleOpenJobFolder"
                             hidden$="{{computeOpenJobIcon(job)}}"></i>
                         <i class="fa fa-bug bug-job" title="Report Error" hidden$="{{!hasError(job)}}" on-click="handleReportError"></i>
                         <!-- </template> -->
@@ -300,7 +300,7 @@
                             request: {
                                 success: function (response) {
                                     if (response.response[0].error == null) {
-                                        console.log('Job deleted');
+                                        console.log('Study deleted');
                                     } else {
                                         console.log(response.response[0].error);
                                     }

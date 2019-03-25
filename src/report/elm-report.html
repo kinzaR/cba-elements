@@ -220,21 +220,21 @@
         <div id="outline" class="vertical layout">
             <div id="outlineContent" class="vertical layout"></div>
             <div id="outlineBottomBar" class="horizontal layout end-justified">
-                <i class="fa fa-download download-job" title="Download Job" on-click="handleDownloadJob"></i>
-                <i class="fa fa-trash-o delete-job" title="Delete Job" on-click="handleDeleteJob"></i>
-                <i hidden$="{{hideRelaunch}}" class="fa fa-refresh relaunch-job" title="Relaunch Job" on-click="handleRelaunchJob"></i>
+                <i class="fa fa-download download-job" title="Download study" on-click="handleDownloadJob"></i>
+                <i class="fa fa-trash-o delete-job" title="Delete study" on-click="handleDeleteJob"></i>
+                <i hidden$="{{hideRelaunch}}" class="fa fa-refresh relaunch-job" title="Relaunch study" on-click="handleRelaunchJob"></i>
             </div>
         </div>
         <div id="up" on-click="handleUp" class="button elm-btn elm-btn-shdw" title="Go top"><i class="fa fa-arrow-up"></i></div>
         <div>
-            <div id="jobInfo" class="section">Job Information</div>
+            <div id="jobInfo" class="section">Study Information</div>
             <div style="margin-left:30px;">
                 <div class="param"><span class="key">Name:</span><span class="val">{{job.name}}</span></div>
                 <div class="param"><span class="key">Description:</span><span class="val">{{job.description}}</span></div>
                 <div class="param"><span class="key">Tool:</span><span class="val">{{job.tool}}</span></div>
                 <div class="param"><span class="key">Date:</span><span class="val">{{jobDate}}</span></div>
             </div>
-            <div id="inputParamsHeader" class="section">Job Arguments</div>
+            <div id="inputParamsHeader" class="section">Study Arguments</div>
             <div id="inputParams" style="margin-left: 30px;"></div>
             <br>
         </div>
@@ -305,14 +305,14 @@
                     this.fileNameMap = {};
 
                     var jobInfoElem = document.createElement('a');
-                    jobInfoElem.innerHTML = '<i class="fa fa-caret-right"></i><span>Job information</span>';
+                    jobInfoElem.innerHTML = '<i class="fa fa-caret-right"></i><span>Study information</span>';
                     jobInfoElem.style.fontWeight = "bold";
                     jobInfoElem.href = "#jobInfo";
                     jobInfoElem.classList.add('outline-line');
                     Polymer.dom(this.$.outlineContent).appendChild(jobInfoElem);
 
                     var inputParamsElem = document.createElement('a');
-                    inputParamsElem.innerHTML = '<i class="fa fa-caret-right"></i><span>Job Arguments</span>';
+                    inputParamsElem.innerHTML = '<i class="fa fa-caret-right"></i><span>Study Arguments</span>';
                     inputParamsElem.style.fontWeight = "bold";
                     inputParamsElem.href = "#inputParamsHeader";
                     inputParamsElem.classList.add('outline-line');
@@ -1428,7 +1428,7 @@
                             request: {
                                 success: function(response) {
                                     if (response.response[0].error == null) {
-                                        console.log('Job deleted');
+                                        console.log('Study deleted');
                                     } else {
                                         console.log(response.response[0].error);
                                     }

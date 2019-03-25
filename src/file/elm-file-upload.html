@@ -288,7 +288,7 @@
                 if (this.$.validator.errorCount > 0) {
                     this.message = "The file contains errors."
                     if (window.UPLOAD_FILES_WITH_ERRORS == true) {
-                        new elmDialog().confirm("File contains error messages, if you use this file on a job the execution may fail, are you sure?", function(res) {
+                        new elmDialog().confirm("File contains error messages, if you use this file on a Study the execution may fail, are you sure?", function(res) {
                             if (res == true) {
                                 me.handleForm();
                             }

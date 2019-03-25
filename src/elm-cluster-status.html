@@ -64,8 +64,8 @@
                 <li><i class$="{{_computeSingleElementStatusClass(_serverStatusObject.memUsage, _statusThresholds.cpu_Mem)}} fa"></i> Memory Usage: <span class="cluster_data">{{_computeNumber(_serverStatusObject.memUsage, 0)}} %</span></li>
                 <li><i class="fa fa-globe"></i> Connexion Latency: <span class="cluster_data">{{_connexionLatency}} ms</span></li>
                 <hr>
-                <li>Jobs Running: <span class="cluster_data">{{_serverStatusObject.jobsRunning}}</span></li>
-                <li>Jobs Awaiting: <span class="cluster_data">{{_serverStatusObject.jobsWaiting}}</span></li>
+                <li>Studies Running: <span class="cluster_data">{{_serverStatusObject.jobsRunning}}</span></li>
+                <li>Studies Awaiting: <span class="cluster_data">{{_serverStatusObject.jobsWaiting}}</span></li>
             </ul>
         </elm-tooltip>
     </template>

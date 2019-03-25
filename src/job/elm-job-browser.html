@@ -103,7 +103,7 @@
             </div>
             <label hidden$="{{hideNotificationControl}}" class="elm-control" style="cursor:pointer; text-align:center;" title="When enabled, an email will be sent every time a job ends.">
                 <input id="jobNotificationCheckbox" type="checkbox" name="job" on-click="handleClickJobNotification">
-                <span>Enable job notifications</span>
+                <span>Enable notifications</span>
             </label>
         </div>
         <div hidden$="{{!message}}" class="elm-note elm-note-warn">
@@ -357,7 +357,7 @@
                             request: {
                                 success: function(response) {
                                     if (response.response[0].error == null) {
-                                        console.log('Job deleted');
+                                        console.log('Study deleted');
                                     } else {
                                         console.log(response.response[0].error);
                                     }
