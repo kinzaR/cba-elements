@@ -1024,12 +1024,16 @@
                         var parsedContent = me._parseTabularFile(content);
                         table.set('data', parsedContent.data);
                         table.set('columns', parsedContent.columns);
+
+                        table.style.width=parsedContent.totalColWidth  + "px";
                     });
                 }else{
                     me._readLocalFile(me.job.LocalFile+'/'+name, function(content) {
                         var parsedContent = me._parseTabularFile(content);
                         table.set('data', parsedContent.data);
                         table.set('columns', parsedContent.columns);
+
+                        table.style.width=parsedContent.totalColWidth  + "px";
                     });
                 }
 
@@ -1342,6 +1346,7 @@
             },
             _parseTabularFile: function(textContent) {
                 var lines = textContent.split('\n');
+                var totalColWidth =0;
                 if (lines.length > 0) {
                     var line, fields, field, data = [],
                         columns = [],
@@ -1359,6 +1364,7 @@
                             // width = 150;
                             width = 400;
                         }
+                        totalColWidth += width;
                         columns.push({
                             name: name,
                             title: name.replace('path', 'circuit'),
@@ -1388,7 +1394,8 @@
                     }
                     return {
                         columns: columns,
-                        data: data
+                        data: data,
+                        totalColWidth: totalColWidth
                     };
                 }
             },
