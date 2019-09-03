@@ -13,7 +13,7 @@ function ExperimentalDesignValidator(options) {
 ExperimentalDesignValidator.prototype = Object.create(Validator.prototype);
 
 ExperimentalDesignValidator.prototype.validateLine = function (line, isLast) {
-    this.parseData(line);
+    this.parseData(line, isLast);
 }
 
 ExperimentalDesignValidator.prototype.validateEnd = function () {

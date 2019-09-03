@@ -237,7 +237,7 @@
             <elm-file-upload class="container" id="uploadFile" on-file-uploaded="handleFileUploaded" selected-folder="{{folder}}" bioformats="{{bioformats}}"></elm-file-upload>
         </elm-panel>
 
-        <elm-panel modal closable hidden id="filePreviewPanel">
+        <elm-panel modal closable movable hidden id="filePreviewPanel">
             <div class="header">
                 <i class="fa fa-eye"></i> File Preview
             </div>
@@ -246,7 +246,7 @@
             <!--<code class="wrapped-text">{{contentData}}</code>-->
             <!--</div>-->
         </elm-panel>
-        <elm-panel modal closable hidden id="imagePreviewPanel">
+        <elm-panel modal closable movable hidden id="imagePreviewPanel">
             <div class="header">
                 <i class="fa fa-eye"></i> Image Preview
             </div>
@@ -662,7 +662,6 @@
             return true;
         },
         _getFilesInFolder: function(folderId, callback) {
-            // console.log(folderId);
             var me = this;
 
             var bfList = [];
