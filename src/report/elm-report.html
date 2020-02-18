@@ -647,11 +647,13 @@
                 var reg = new RegExp('^[0-9]+$');
                 if (reg.test(width)) {
                     img.setAttribute('width', width);
+                }else{
+                    img.setAttribute("style","max-width:40%");
                 }
                 if (reg.test(height)) {
                     img.setAttribute('height', height);
                 }
-                img.setAttribute("style","max-width:40%")
+                
                 
                 el.appendChild(i);
                 el.appendChild(a);
