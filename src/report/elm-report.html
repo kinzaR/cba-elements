@@ -1028,16 +1028,16 @@
                         var parsedContent = me._parseTabularFile(content);
                         table.set('data', parsedContent.data);
                         table.set('columns', parsedContent.columns);
-
-                        table.style.width=parsedContent.totalColWidth  + "px";
+                        if(parsedContent.columns.length<8)
+                            table.style.width=parsedContent.totalColWidth  + "px";
                     });
                 }else{
                     me._readLocalFile(me.job.LocalFile+'/'+name, function(content) {
                         var parsedContent = me._parseTabularFile(content);
                         table.set('data', parsedContent.data);
                         table.set('columns', parsedContent.columns);
-
-                        table.style.width=parsedContent.totalColWidth  + "px";
+                        if(parsedContent.columns.length<8)
+                            table.style.width=parsedContent.totalColWidth  + "px";
                     });
                 }
 
