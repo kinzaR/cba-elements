@@ -98,6 +98,15 @@
             visibility: hidden;
         }
 
+        .link {
+            cursor: pointer;
+            visibility: visible;
+        }
+
+        .link:hover{
+            color: var(--dark-button-color);
+        }
+
         .item:hover>.view {
             visibility: visible;
         }
@@ -214,7 +223,8 @@
                     <div class="line">{{item.line}}</div>
                     <div class="type" type$="{{item.type}}">{{item.type}}</div>
                     <div class="msg flex">{{item.msg}}</div>
-                    <div class="view" line="{{item.line}}" on-click="handleLogViewClick" title="View line"><i class="fa fa-search"></i></div>
+                    <div class="view"  hidden="{{item.link}}" line="{{item.line}}" on-click="handleLogViewClick" title="View line"><i class="fa fa-search"></i></div>
+                    <div class="link" hidden="{{!item.link}}" title="{{item.link}}"><a href="{{item.link}}" rel="noopener noreferrer" target="_blank"> <i class="fa fa-external-link" aria-hidden="true"></i></a></div>
                 </div>
             </template>
         </iron-list>

@@ -71,6 +71,10 @@ Validator.prototype = {
                     me._readBytes += line.length;
                     me.progress = (me._readBytes / me._totalBytes) * 100;
                     me.validateLine(line, isLast);
+                    if(me.validateStop()){
+                        me._emit("stop");
+                        return;
+                    }
                 }
                 me._emit("progress", me.progress);
 
@@ -110,12 +114,13 @@ Validator.prototype = {
     validateEnd: function () {
         return true;
     },
-    addLog: function (type, msg, column) {
+    addLog: function (type, msg, column,link) {
         var log = {
             type: type,
             msg: msg,
             line: this.line,
-            column: column
+            column: column,
+            link: link
         };
         this.log.push(log);
         this._emit("log", log);

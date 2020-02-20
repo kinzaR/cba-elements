@@ -31,7 +31,11 @@ ExpressionValidator.prototype.validateEnd = function () {
         this.addLog("error", "The file contains one line or less.");
     }
 }
-
+ExpressionValidator.prototype.validateStop = function () {
+    if (this._columnsSize -1 >= 500) {
+        return true;
+    }
+}
 ExpressionValidator.prototype.parseHeader = function (line) {
     var cols = line.split('\t');
     this._columnsSize = cols.length;
@@ -39,11 +43,15 @@ ExpressionValidator.prototype.parseHeader = function (line) {
     if (cols.length < 2) {
         this.addLog("error", "Header columns must be 2 or higher.");
     } else {
-        var v = parseFloat(cols[1]);
-        if (isNaN(v)) {
+        if(cols.length-1 >= 500){
+            this.addLog("error", "The web version of Hipathia is limited to a maximum of 500 samples per dataset. For bigger datasets please use the R Bioconductor Hipathia package.","","http://bioconductor.org/packages/release/bioc/html/hipathia.html");
+        }else{
+            var v = parseFloat(cols[1]);
+            if (isNaN(v)) {
 
-        } else {
-            this.addLog("warning", "Header could not be set correctly, sample names seems to be numbers.")
+            } else {
+            	this.addLog("warning", "Header could not be set correctly, sample names seems to be numbers.")
+            }
         }
     }
 }
