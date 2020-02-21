@@ -21,7 +21,7 @@ GeneListValidator.prototype.validateEnd = function () {
         this.addLog("error", "The file is empty");
     }
 }
-
+GeneListValidator.prototype.validateStop = function () {}
 GeneListValidator.prototype.parseData = function (line, isLast) {
     if (line == "") {
         if (!isLast)

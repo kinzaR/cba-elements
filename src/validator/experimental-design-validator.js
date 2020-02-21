@@ -11,17 +11,15 @@ function ExperimentalDesignValidator(options) {
 }
 
 ExperimentalDesignValidator.prototype = Object.create(Validator.prototype);
-
 ExperimentalDesignValidator.prototype.validateLine = function (line, isLast) {
     this.parseData(line, isLast);
 }
-
 ExperimentalDesignValidator.prototype.validateEnd = function () {
     if (this.numLines < 1) {
         this.addLog("error", "The file is empty");
     }
 }
-
+ExperimentalDesignValidator.prototype.validateStop = function () {}
 ExperimentalDesignValidator.prototype.parseData = function (line, isLast) {
     if (line == "") {
         if (!isLast)

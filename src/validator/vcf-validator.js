@@ -59,7 +59,7 @@ VCFValidator.prototype.validateLine = function (line) {
     }
 
 }
-
+VCFValidator.prototype.validateStop = function () {}
 VCFValidator.prototype.isHeaderLine = function (line) {
     return line.startsWith("#");
 }
