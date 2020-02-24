@@ -240,7 +240,7 @@
                             if (item.tool === me.toolFilterValue) {
                                 return true;
                             }
-                            if (me.allowedTools.indexOf(item.tool + '.' + me.toolFilterValue)!= -1) {
+                            if (me.allowedTools.indexOf(item.tool + '.' + item.execution)!= -1 && item.execution === me.toolFilterValue) {
                                 return true;
                             }
                             if (item.tool + '.' + item.execution === me.toolFilterValue) {
