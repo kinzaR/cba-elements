@@ -364,6 +364,7 @@
             stop: function() {
                 if (this.validator) {
                     this.validator.stop();
+                    this.fire("stop");
                 }
             },
             setFile: function(file) {
