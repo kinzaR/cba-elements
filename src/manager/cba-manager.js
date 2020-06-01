@@ -94,6 +94,9 @@ var CbaManager = {
         saveAttrFile: function (args) {
             return CbaManager._doRequest(args, 'files', 'save-attr-file');
         },
+        saveAttFile: function (args) {
+            return CbaManager._doRequest(args, 'files', 'save-att-file');
+        },
         read: function (args) {
             return CbaManager._doRequest(args, 'files', 'info');
         },
