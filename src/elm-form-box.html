@@ -82,6 +82,9 @@
                 <div hidden$="{{!collapsible}}" class="collapsible">
                     <i class$="{{computeIcon(collapsible,collapsed)}}" title="{{computeTitle(collapsible,collapsed)}}"></i>
                 </div>
+                <div class="horizontal layout right">
+                    <content select=".info"></content>
+                </div>
             </div>
             <div id="container" class="horizontal layout" hidden$="{{isContainerHidden(collapsible, collapsed)}}">
                 <content select=".container"></content>
