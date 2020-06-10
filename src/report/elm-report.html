@@ -27,14 +27,15 @@
             /*position: fixed;*/
             position: absolute;
             box-sizing: border-box;
-            margin-top: 25px;
+            margin-top: 0px;
             right: 40px;
             min-width: 300px;
             max-width: 300px;
             background-color: white;
             border: 1px solid var(--divider-color);
             box-shadow: 0px 0px 4px 0px rgba(0, 0, 0, 0.2);
-            padding: 20px;
+            padding: 9px;
+            font-size: 12px;
         }
 
         #up {
@@ -227,6 +228,7 @@
         </div>
         <div id="up" on-click="handleUp" class="button elm-btn elm-btn-shdw" title="Go top"><i class="fa fa-arrow-up"></i></div>
         <div>
+            <br>
             <div id="jobInfo" class="section">Study Information</div>
             <div style="margin-left:30px;">
                 <div class="param"><span class="key">Name:</span><span class="val">{{job.name}}</span></div>
@@ -1083,7 +1085,7 @@
                     }
                 }
 
-                if (this.job.tool === 'hipathia') {
+                if (this.job.tool === 'hipathia-course' || this.job.tool === 'hipathia' || this.job.tool === 'covid') {
                     pv.set('showHipathiaLegend', true);
                 }
                 if (this.job.tool == 'metabolizer') {
@@ -1091,13 +1093,15 @@
                     pv.set('circuitLabel', 'Modules');
                 }
                 /*Backward fix*/
-                nodeAttrMap = {
-                    'strokeColor': 'exp',
-                    'color': 'diff.exp',
-                    'size': 'width'
-                }
-                edgeAttrMap = {
-                    'shape': 'head'
+                if(this.job.executable != "differential-signaling2.sh"){
+                    nodeAttrMap = {
+                        'strokeColor': 'exp',
+                        'color': 'diff.exp',
+                        'size': 'width'
+                    }
+                    edgeAttrMap = {
+                        'shape': 'head'
+                    }
                 }
                 pv.nodeAttributeMapping = nodeAttrMap;
                 pv.edgeAttributeMapping = edgeAttrMap;
