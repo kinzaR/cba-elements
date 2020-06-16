@@ -16,6 +16,8 @@
             background-color: #FFFFFF;
             padding: 20px 40px;
             /*@apply(--layout-horizontal);*/
+            --paper-progress-height: 20px;
+            --paper-progress-width: 100%;
         }
 
          :host[toc-fixed]>#outline {
@@ -216,8 +218,13 @@
         pathway-drug-viewer {
             background-color: inherit;
         }
+        .red {
+            --paper-progress-active-color: var(--paper-red-500);
+            --paper-progress-secondary-color: var(--paper-light-blue-500);   
+        }
     </style>
     <template>
+        <paper-progress value="40" class="red" title="40" hidden=""> </paper-progress>
         <div id="outline" class="vertical layout">
             <div id="outlineContent" class="vertical layout"></div>
             <div id="outlineBottomBar" class="horizontal layout end-justified">
@@ -1007,7 +1014,7 @@
                 var me = this;
                 // <table title='Path significance' file='paths_comparison.txt'  page-size='10'></table>
                 var name = outEl.getAttribute('file');
-
+                var originFile = outEl.getAttribute('originFile');       
                 var el = document.createElement('div');
                 var i = document.createElement('i');
                 i.classList.add('fa', this.iconMap['table']);
@@ -1023,8 +1030,55 @@
 
                 var table = document.createElement('elm-table');
                 table.setAttribute('enable-paging', '');
+                table.setAttribute('enable-loading', '');
+                table.setAttribute('enable-select', '');
                 table.setAttribute('page-size', outEl.getAttribute('page-size'));
-                
+                 /////////////////////////
+                if(outEl.getAttribute("title")=="Pathways summary"){
+                    a.setAttribute('href', CbaManager.getFileURL(this.getFileFromName(originFile)._id));
+                    //table.style.width= 100 +"%";
+                    //table.style.height=100  +"%";
+                    table.style.maxHeight=700  +"px";
+                    table.addEventListener('click', function(e) {
+                        if(e.target.parentElement.className.search("table-field")>=0){
+                            var selectedPathId = e.currentTarget.selected[0].Pathway_id;
+                            //selectedPathId =selectedPathId.substring(selectedPathId.indexOf(">")+1, selectedPathId.indexOf("</a>"));
+                            //var pv = Polymer.dom(renderEl).childNodes[11].firstChild;
+                            var pv =document.getElementsByTagName("pathway-viewer")[0];
+                            var category= pv._categoryDetailsFromID(selectedPathId);
+                            //document.getElementById("reportTab").selected=0;
+                            pv.scrollIntoView({block: "end", behavior: "smooth"});
+                            pv.handleCenterNetwork();
+                            pv.set('selectedCategory', category);
+                            pv.selectCategory(category);
+                        }
+                        
+                    });
+                }
+                if(outEl.getAttribute("title")=="Circuit significance"){
+                    table.style.maxHeight=700  +"px";
+                    table.addEventListener('click', function(e) {  
+                        if(e.target.parentElement.className.search("table-field")>=0){
+                            var selectedCircuit = e.currentTarget.selected[0].path_names;
+                            //var pv = Polymer.dom(renderEl).childNodes[11].firstChild;
+                            var pv =document.getElementsByTagName("pathway-viewer")[0];
+                            pv.set('selectedCircuit', null);
+                            var circuit= pv._circuitDetailsFromName(selectedCircuit)[0].circuit;
+                            var category= pv._circuitDetailsFromName(selectedCircuit)[1].category;
+                            pv.set('selectedCategory', category);
+                            pv.selectCategory(category);
+                            //e.currentTarget._clearSelection()
+
+                            pv.addEventListener('select-category', function (e) {
+                                pv.scrollIntoView({block: "end", behavior: "smooth"});
+                                pv.selectCircuit(circuit);
+                                pv. handleCenterNetwork();
+                                circuit=null;
+                            });
+                        }  
+                    });
+                }
+                /////////////////////////
                 if (this.getFileFromName(name) != null && typeof(this.job.LocalFile) == 'undefined') {
                      CbaManager.getFileContent(this.getFileFromName(name)._id, function(content) {
                         var parsedContent = me._parseTabularFile(content);
