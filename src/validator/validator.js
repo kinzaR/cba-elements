@@ -35,7 +35,74 @@ Validator.prototype = {
         var me = this;
 
         /*Check if file is \r or \n , \r\n */
-        this._detectCRSeparator(this.file, function (res) {
+        this._getLineBreakChar(this.file, function(lineBreak){
+            var lastReadBytes = null;
+            if(lineBreak){
+                console.log("the line breacke is : "+lineBreak.charCodeAt(0));
+                me._navigator = new LineNavigator(me.file, {
+                    newLineCode: lineBreak.charCodeAt(0),
+                    splitLinesPattern: lineBreak
+                });
+            }else{
+                me._navigator = new LineNavigator(me.file, {
+                    chunkSize: 1024 * 50
+                });
+                console.log("Error : no break line detected!");
+            }
+            me._totalBytes = me.file.size;
+            var indexToStartWith = 0;
+            lastReadBytes = 0;
+
+            me._navigator.readLines(indexToStartWith, me.linesToRead, function linesReadHandler(err, index, lines, eof, progress) {
+                if (err) {
+                    me._emit("err");
+                    return;
+                }
+                // console.log(lines.length);
+                console.log(progress);
+
+                var isLast = false;
+                for (var i = 0; i < lines.length; i++) {
+                    var line = lines[i];
+                    isLast = (i == (lines.length - 1) && eof);
+
+                    me.line++;
+                    me.numLines++;
+                    me._readBytes += line.length;
+                    me.progress = (me._readBytes / me._totalBytes) * 100;
+                    me.validateLine(line, isLast);
+                    if(me.validateStop()){
+                        me._emit("stop");
+                        return;
+                    }
+                }
+                me._emit("progress", me.progress);
+
+                if (eof) {
+                    me._emit("progress", 100);
+                    me._emit("end");
+                    me._validateEnd();
+                    return;
+                }
+
+                // if (lastReadBytes == me._readBytes) {
+                //     me._emit("progress", 100);
+                //     me._emit("end");
+                //     me._validateEnd();
+                //     return;
+                // }
+
+                lastReadBytes = me._readBytes;
+
+                if (me._navigator._stop != true) {
+                    me._navigator.readLines(index + lines.length, me.linesToRead, linesReadHandler);
+                } else {
+                    me._emit("stop");
+                    console.log("STOP!!!!!");
+                }
+            });
+        });
+        /*this._detectCRSeparator(this.file, function (res) {
             var lastReadBytes = null;
 
             if (res) {
@@ -102,7 +169,7 @@ Validator.prototype = {
                 }
             });
 
-        });
+        });*/
         // });
     },
     validateLine: function (line) {
@@ -142,6 +209,19 @@ Validator.prototype = {
             } else {
                 cb(false);
             }
+        }
+        reader.readAsText(file);
+    },
+    _getLineBreakChar: function (file, cb) {
+        var reader = new FileReader();
+        reader.onload =function(e){
+            var string= e.target.result;
+            const indexOfLF = string.indexOf('\n', 1);  // No need to check first-character
+            if (indexOfLF >0 & string[indexOfLF - 1] === '\r') cb('\r\n');
+            else if (indexOfLF === -1) {
+                if (string.indexOf('\r') !== -1) cb('\r');
+            }
+            else cb('\n');
         }
         reader.readAsText(file);
     }
