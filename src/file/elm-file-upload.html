@@ -389,6 +389,12 @@
                 if (this.$.bioformatSelect.selectedBioformat != null) {
                     selBioformat = this.$.bioformatSelect.selectedBioformat;
                 }
+                if(this.$.fileInput.files[0].size>500000000){
+                    new elmDialog().alert("The web version of Hipathia is limited to a maximum size of 500MB per file. For bigger datasets please use the R Bioconductor Hipathia package, Please feel free to contact us for further info!");
+                    this.validating = false;
+                    this.message = "File is too big, the muximum size is 500MB."
+                    return;
+                }
                 if (selBioformat == null) {
                     new elmDialog().alert("Please select a bioformat");
                     this.validating = false;

@@ -37,8 +37,7 @@ Validator.prototype = {
         /*Check if file is \r or \n , \r\n */
         this._getLineBreakChar(this.file, function(lineBreak){
             var lastReadBytes = null;
-            if(lineBreak){
-                console.log("the line breacke is : "+lineBreak.charCodeAt(0));
+            if(lineBreak && lineBreak != '\n'){
                 me._navigator = new LineNavigator(me.file, {
                     newLineCode: lineBreak.charCodeAt(0),
                     splitLinesPattern: lineBreak
