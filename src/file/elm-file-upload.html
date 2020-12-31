@@ -75,7 +75,11 @@
             border: 1px solid var(--divider-color);
             height: 250px;
         }
-
+        #stop {
+            margin-left: 7px;
+            background-color: var(--dark-button-color);
+            color: var(--text-primary-color);
+        }
         #openFileButton {
             width: 200px;
         }
@@ -182,6 +186,7 @@
                         <br>
                     </div>
                 </div>
+                <div id="stop" class="elm-btn elm-btn-shdw" on-click="handleStop" hidden>Stop</div>
             </div>
 
         </div>
@@ -395,6 +400,12 @@
                     this.message = "File is too big, the muximum size is 500MB."
                     return;
                 }
+                if(!this.$.fileInput.files[0].type.includes("text")){
+                    new elmDialog().alert("The selected file is not a text file! Please see : http://hipathia.babelomics.org/doc/doku.php?id=data_format");
+                    this.validating = false;
+                    this.message = "The selected file is not a text file!"
+                    return;
+                }
                 if (selBioformat == null) {
                     new elmDialog().alert("Please select a bioformat");
                     this.validating = false;
@@ -454,7 +465,16 @@
                 this.revalidate();
             }
         },
-
+        handleStop: function(e) {
+            //this has to add Cba manager for stoping th upload
+            if (this.uploading == true){
+                this.message = "Uploading stoped.";
+                this.percentProgress = 0;
+                this.uploading = false;
+                this.$.validator.reset();
+                this.fire('need-refresh');
+            }
+        },
         tplEq: function(prop, value) {
             return prop == value;
         },

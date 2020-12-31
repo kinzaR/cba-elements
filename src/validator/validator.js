@@ -33,6 +33,16 @@ Validator.prototype = {
 
     validate: function () {
         var me = this;
+        this._getFileEncoding(this.file, function(encoding){
+            console.log(me.file.name + " has encoding : "+encoding);
+            if(encoding!="UTF8" && encoding!="ASCII"){
+                console.log("i ama f¡hee")
+                me.addLog("warning", 
+                    "The used encoding file is not recommended (UTF8/ASCII), maybe you will face some troubles!",
+                     1,
+                     "http://hipathia.babelomics.org/doc/doku.php?id=data_format#character_encoding");
+            }
+        });
 
         /*Check if file is \r or \n , \r\n */
         this._getLineBreakChar(this.file, function(lineBreak){
@@ -221,6 +231,21 @@ Validator.prototype = {
                 if (string.indexOf('\r') !== -1) cb('\r');
             }
             else cb('\n');
+        }
+        reader.readAsText(file);
+    },
+    _getFileEncoding: function (file, cb) {
+        var reader = new FileReader();
+        reader.onload =function(e){
+            var string= e.target.result;
+            //const text = new Uint8Array(e.target.result);  
+            var encoding = Encoding.detect(string);
+            cb(encoding);
+            /*if (indexOfLF >0 & string[indexOfLF - 1] === '\r') cb('\r\n');
+            else if (indexOfLF === -1) {
+                if (string.indexOf('\r') !== -1) cb('\r');
+            }
+            else cb('\n');*/
         }
         reader.readAsText(file);
     }

@@ -238,7 +238,7 @@
         <div>
             <br>
             <div id="jobInfo" class="section">Study Information</div>
-            <div style="margin-left:30px;">
+            <div style="margin-left:30px;;margin-right:40%">
                 <div class="param"><span class="key">Name:</span><span class="val">{{job.name}}</span></div>
                 <div class="param"><span class="key">Description:</span><span class="val">{{job.description}}</span></div>
                 <div class="param"><span class="key">Tool:</span><span class="val">{{job.tool}}</span></div>
@@ -322,13 +322,16 @@
                     jobInfoElem.classList.add('outline-line');
                     Polymer.dom(this.$.outlineContent).appendChild(jobInfoElem);
 
-                    var inputParamsElem = document.createElement('a');
-                    inputParamsElem.innerHTML = '<i class="fa fa-caret-right"></i><span>Study Arguments</span>';
-                    inputParamsElem.style.fontWeight = "bold";
-                    inputParamsElem.href = "#inputParamsHeader";
-                    inputParamsElem.classList.add('outline-line');
-                    Polymer.dom(this.$.outlineContent).appendChild(inputParamsElem);
-
+                    if(this.$.inputParamsHeader.hidden != true){
+                        var inputParamsElem = document.createElement('a');
+                        inputParamsElem.innerHTML = '<i class="fa fa-caret-right"></i><span>Study Arguments</span>';
+                        inputParamsElem.id = "studyArguments"
+                        inputParamsElem.style.fontWeight = "bold";
+                        inputParamsElem.href = "#inputParamsHeader";
+                        inputParamsElem.classList.add('outline-line');
+                        Polymer.dom(this.$.outlineContent).appendChild(inputParamsElem);
+                    }
+                    
                     var files = [];
                     
                     if (me.job.folder._id && typeof(me.job.LocalFile) == 'undefined') {
@@ -414,6 +417,9 @@
 
                 if (inputParams.length == 0 || (inputParams.length == 1 && inputParams[0].textContent.trim() == "")) {
                     this.$.inputParamsHeader.hidden = true;
+                    if(this.$.outlineContent.children.studyArguments != null)
+                        this.$.outlineContent.children.studyArguments.hidden = true;
+
                 } else {
                     this._processParams(reportXML, inputParams, this.$.inputParams);
                 }
