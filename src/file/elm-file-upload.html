@@ -398,12 +398,15 @@
                     new elmDialog().alert("The web version of Hipathia is limited to a maximum size of 500MB per file. For bigger datasets please use the R Bioconductor Hipathia package, Please feel free to contact us for further info!");
                     this.validating = false;
                     this.message = "File is too big, the muximum size is 500MB."
+                    this.$.validator.validator.addLog("error", "Hipathia web is limited to a maximum size of 500MB per file. For bigger datasets please use the R Bioconductor Hipathia package.", "", "http://bioconductor.org/packages/release/bioc/html/hipathia.html");
                     return;
                 }
                 if(!this.$.fileInput.files[0].type.includes("text")){
                     new elmDialog().alert("The selected file is not a text file! Please see : http://hipathia.babelomics.org/doc/doku.php?id=data_format");
                     this.validating = false;
                     this.message = "The selected file is not a text file!"
+                    this.$.validator.validator.addLog("error", "The selected file is not a text file.","","http://hipathia.babelomics.org/doc/doku.php?id=data_format");
+
                     return;
                 }
                 if (selBioformat == null) {
