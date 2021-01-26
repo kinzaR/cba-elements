@@ -32,7 +32,7 @@ ExpressionValidator.prototype.validateEnd = function () {
     }
 }
 ExpressionValidator.prototype.validateStop = function () {
-    if (this._columnsSize -1 >= 500) {
+    if (this._columnsSize -1 >= 600) {
         return true;
     }
 }
@@ -43,8 +43,8 @@ ExpressionValidator.prototype.parseHeader = function (line) {
     if (cols.length < 2) {
         this.addLog("error", "Header columns must be 2 or higher.");
     } else {
-        if(cols.length-1 >= 500){
-            this.addLog("error", "The web version of Hipathia is limited to a maximum of 500 samples per dataset. For bigger datasets please use the R Bioconductor Hipathia package.","","http://bioconductor.org/packages/release/bioc/html/hipathia.html");
+        if(cols.length-1 >= 600){
+            this.addLog("error", "The web version of Hipathia is limited to a maximum of 600 samples per dataset. For bigger datasets please use the R Bioconductor Hipathia package.","","http://bioconductor.org/packages/release/bioc/html/hipathia.html");
         }else{
             var v = parseFloat(cols[1]);
             if (isNaN(v)) {
@@ -71,7 +71,7 @@ ExpressionValidator.prototype.parseData = function (line, isLast) {
                 for (var i = 1; i < columns.length; i++) {
                     var c = columns[i];
                     var v = parseFloat(c);
-                    if (isNaN(v)) {
+                    if (isNaN(v) || !(Number(c) == c && c % 1 !== 0)) {
                         found = true;
                         break;
                     }

@@ -36,7 +36,6 @@ Validator.prototype = {
         this._getFileEncoding(this.file, function(encoding){
             console.log(me.file.name + " has encoding : "+encoding);
             if(encoding!="UTF8" && encoding!="ASCII"){
-                console.log("i ama f¡hee")
                 me.addLog("warning", 
                     "The used encoding file is not recommended (UTF8/ASCII), maybe you will face some troubles!",
                      1,
@@ -47,16 +46,19 @@ Validator.prototype = {
         /*Check if file is \r or \n , \r\n */
         this._getLineBreakChar(this.file, function(lineBreak){
             var lastReadBytes = null;
-            if(lineBreak && lineBreak != '\n'){
+            //if(lineBreak && lineBreak != '\n'){
+            if(lineBreak && me.file.size < 500000000){
                 me._navigator = new LineNavigator(me.file, {
                     newLineCode: lineBreak.charCodeAt(0),
                     splitLinesPattern: lineBreak
                 });
             }else{
+                if(!lineBreak){
+                    console.log("Error : no break line detected!");
+                }
                 me._navigator = new LineNavigator(me.file, {
                     chunkSize: 1024 * 50
                 });
-                console.log("Error : no break line detected!");
             }
             me._totalBytes = me.file.size;
             var indexToStartWith = 0;
@@ -67,7 +69,7 @@ Validator.prototype = {
                     me._emit("err");
                     return;
                 }
-                // console.log(lines.length);
+                //console.log(lines.length);
                 console.log(progress);
 
                 var isLast = false;
@@ -224,15 +226,35 @@ Validator.prototype = {
     _getLineBreakChar: function (file, cb) {
         var reader = new FileReader();
         reader.onload =function(e){
-            var string= e.target.result;
-            const indexOfLF = string.indexOf('\n', 1);  // No need to check first-character
+            const buffer = new Uint8Array(e.target.result);
+            for (var i = 0; i < buffer.length; i += 100) { // le pas est 100
+                buffer[i]
+                var string = new TextDecoder('utf-8').decode(buffer.slice(i , i + 100));
+                const indexOfLF = string.indexOf('\n', 1);
+                if (indexOfLF >0 & string[indexOfLF - 1] === '\r'){
+                    cb('\r\n');
+                    break;
+                }
+                else if (indexOfLF >0) {
+                    cb('\n');
+                    break;
+                }
+                else if (indexOfLF === -1 & string.indexOf('\r') !== -1) {
+                    cb('\r');
+                    break;
+                }
+                
+            }
+            //var string = new TextDecoder('utf-8').decode(buffer.slice(0, 200));
+            //var string= e.target.result;
+            /*const indexOfLF = string.indexOf('\n', 1);  // No need to check first-character
             if (indexOfLF >0 & string[indexOfLF - 1] === '\r') cb('\r\n');
             else if (indexOfLF === -1) {
                 if (string.indexOf('\r') !== -1) cb('\r');
             }
-            else cb('\n');
+            else cb('\n');*/
         }
-        reader.readAsText(file);
+        reader.readAsArrayBuffer(file);
     },
     _getFileEncoding: function (file, cb) {
         var reader = new FileReader();
@@ -247,6 +269,7 @@ Validator.prototype = {
             }
             else cb('\n');*/
         }
-        reader.readAsText(file);
+        //reader.readAsText(file);
+        reader.readAsArrayBuffer(file);
     }
 }

@@ -52,7 +52,8 @@
             <template is="dom-if" if="{{bioformat.value}}">
                 <div class="firstLevel">
                     <label class="elm-control" title="{{bioformat.hint}}">
-                        <input type="radio" name="bioformat" on-change="handleRadioChange" value="{{bioformat.value}}" checked$="{{isChecked(bioformats, bioformat)}}">
+                        <input type="radio" name="bioformat" on-change="handleRadioChange" value="{{bioformat.value}}" 
+                       checked$="{{isChecked(bioformats,bioformat)}}">
                         <span>
                             <span>{{bioformat.text}}</span>
                             <i id="url" hidden$="{{!checkUrl(bioformat)}}" class="fa fa-info-circle url" on-click="handleUrl"></i>
