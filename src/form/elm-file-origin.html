@@ -62,7 +62,8 @@
             <div class="horizontal layout">
                 <div class="elm-btn elm-btn-shdw" style="width:150px;" on-click="buttonHandler">File browser</div>
                 <div id="selection" style="line-height: 25px;" class="labelSelection">
-                    <span>{{selectedFile.path}}</span>
+                    <!--<span>{{selectedFile.path}}</span>-->
+                    <span>{{selectedFile.name}}</span>
                 </div>
             </div>
             <div hidden$="{{showBrowser}}">
