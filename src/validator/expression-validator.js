@@ -71,7 +71,7 @@ ExpressionValidator.prototype.parseData = function (line, isLast) {
                 for (var i = 1; i < columns.length; i++) {
                     var c = columns[i];
                     var v = parseFloat(c);
-                    if (isNaN(v) || !(Number(c) == c && c % 1 !== 0)) {
+                    if (v !=1 && v!=0 && (isNaN(v) || !(Number(c) == c && c % 1 !== 0))) {
                         found = true;
                         break;
                     }
